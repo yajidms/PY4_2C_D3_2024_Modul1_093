@@ -10,20 +10,58 @@ class CounterView extends StatefulWidget {
 class _CounterViewState extends State<CounterView> {
   final CounterController _controller = CounterController();
 
+  void _onReset() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Konfirmasi Reset"),
+          content: const Text("Apakah Anda yakin ingin menghapus semua history dan mereset angka ke 0?"),
+          actions: [
+            // button cancel
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Batal"),
+            ),
+            // button yes
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _controller.reset();
+                });
+
+                Navigator.of(context).pop();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Data berhasil di-reset!"),
+                    duration: Duration(seconds: 2),
+                    backgroundColor: Colors.green, // Warna hijau agar terlihat sukses
+                  ),
+                );
+              },
+              child: const Text("Ya, Reset", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("LogBook: SRP"),
+        title: const Text("LogBook: Task 3 (Complete)"),
       ),
-      // bagian dari Slider sama site button
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
+            // bagian dari Slider sama site button
             Column(
+              // menampilkan step
               children: [
-                // menampilkan step
                 Text("Step: ${_controller.step}", style: const TextStyle(fontSize: 20)),
                 // slider untuk mengubah nilai Step
                 Slider(
@@ -51,12 +89,14 @@ class _CounterViewState extends State<CounterView> {
 
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text("Riwayat Perubahan :", style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text("Riwayat Perubahan (Max 5):", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
 
             Expanded(
               // pembuatan list riwayat perubahan sebanyak 5 perubahan
-              child: ListView.builder(
+              child: _controller.history.isEmpty
+                  ? const Center(child: Text("Belum ada riwayat"))
+                  : ListView.builder(
                 itemCount: _controller.history.length,
                 itemBuilder: (context, index) {
                   return Card(
@@ -80,7 +120,7 @@ class _CounterViewState extends State<CounterView> {
         children: [
           // tombol reset
           FloatingActionButton(
-            onPressed: () => setState(() => _controller.reset()),
+            onPressed: _onReset,
             backgroundColor: Colors.red,
             child: const Icon(Icons.refresh),
           ),
