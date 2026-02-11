@@ -19,7 +19,7 @@ class _CounterViewState extends State<CounterView> {
       builder: (context) {
         return AlertDialog(
           title: const Text("Konfirmasi Reset"),
-          content: const Text("Yakin reset data?"),
+          content: const Text("Apakah Anda yakin ingin reset?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -29,12 +29,12 @@ class _CounterViewState extends State<CounterView> {
               onPressed: () {
                 setState(() => _controller.reset());
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text("Data di-reset!")));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Data berhasil di-reset")),
+                );
               },
               child: const Text(
-                "Ya, Reset",
+                "Ya",
                 style: TextStyle(color: Colors.red),
               ),
             ),

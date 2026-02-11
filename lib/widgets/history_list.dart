@@ -21,12 +21,32 @@ class HistoryList extends StatelessWidget {
               : ListView.builder(
             itemCount: history.length,
             itemBuilder: (context, index) {
+              const addedColor = Color(0xFF228B22);
+              const reducedColor = Color(0xFFFF0000);
+
+              Color? pickAccentColor(String text) {
+                if (text.contains('Ditambah')) return addedColor;
+                if (text.contains('Dikurang')) return reducedColor;
+                return null;
+              }
+
+              final entry = history[index];
+              final accentColor = pickAccentColor(entry);
+              final tileColor = accentColor?.withOpacity(0.18);
+
               return Card(
                 elevation: 2,
                 margin: const EdgeInsets.symmetric(vertical: 5),
+                color: tileColor,
                 child: ListTile(
-                  leading: const Icon(Icons.history, color: Colors.blue),
-                  title: Text(history[index]),
+                  tileColor: tileColor,
+                  leading: Icon(
+                    Icons.history,
+                    color: accentColor ?? Colors.blue,
+                  ),
+                  title: Text(
+                    entry,
+                  ),
                   subtitle: Text("Data ke-${index + 1}"),
                 ),
               );
