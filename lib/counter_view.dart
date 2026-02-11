@@ -47,7 +47,7 @@ class _CounterViewState extends State<CounterView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("LogBook: Refactored UI")),
+      appBar: AppBar(title: const Text("LogBook: SRP")),
 
       body: Padding(
         padding: const EdgeInsets.all(20.0),

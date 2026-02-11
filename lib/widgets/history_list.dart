@@ -11,7 +11,7 @@ class HistoryList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          "Riwayat Perubahan (Max 5):",
+          "Riwayat Perubahan :",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
