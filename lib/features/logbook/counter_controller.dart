@@ -14,28 +14,26 @@ class CounterController {
   //getter untuk mengambil riwayat atau history
   List<String> get history => _history;
 
-  Future<void> initUser(String username) async {
+  Future<void> initData(String username) async {
     _activeUser = username;
-    await _loadData();
+    _counter = await loadLastValue(username);
   }
 
   // Fungsi untuk memuat data dari SharedPreferences
-  Future<void> _loadData() async {
+  Future<int> loadLastValue(String username) async {
     final prefs = await SharedPreferences.getInstance();
-    _counter = prefs.getInt('${_activeUser}_counter') ?? 0;
-
+    return prefs.getInt('${username}_counter') ?? 0;
   }
 
   // Fungsi untuk menyimpan data ke SharedPreferences
-  Future<void> _saveData() async {
+  Future<void> saveLastValue(int value, String username) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('${_activeUser}_counter', _counter);
+    await prefs.setInt('${username}_counter', value);
   }
 
   // Fungsi untuk menambahkan catatan ke riwayat
   void _addHistory(String action, int amount) {
-    final time = DateTime.now().toString().substring(11, 16);
-    _history.insert(0, "[$time] User $_activeUser: $action $amount");
+    _history.insert(0, "$action $amount");
     if (_history.length > 5) {
       _history.removeLast();
     }
@@ -45,21 +43,20 @@ class CounterController {
   void increment() {
     _counter += _step;
     _addHistory("Ditambah", _step);
-    _saveData();
+    saveLastValue(_counter, _activeUser);
   }
 
   void decrement() {
     _counter -= _step;
     _addHistory("Dikurang", _step);
-    _saveData();
+    saveLastValue(_counter, _activeUser);
   }
 
-  //untuk hapus history saat melakukan reset
   void reset() {
     _counter = 0;
     _history.clear();
     _history.insert(0, "Data di-reset ke 0");
-    _saveData();
+    saveLastValue(_counter, _activeUser);
   }
 
   void setStep(int newStep) {

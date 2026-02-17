@@ -21,11 +21,11 @@ class _CounterViewState extends State<CounterView> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _loadDataAwal();
   }
 
-  Future<void> _loadUserData() async {
-    await _controller.initUser(widget.username);
+  Future<void> _loadDataAwal() async {
+    await _controller.initData(widget.username);
 
     setState(() {
       _isLoading = false;
@@ -113,6 +113,7 @@ class _CounterViewState extends State<CounterView> {
               "Selamat Datang, ${widget.username}!",
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 10),
 
             // Header (Slider & Angka)
             CounterHeader(
@@ -122,6 +123,7 @@ class _CounterViewState extends State<CounterView> {
             ),
 
             const SizedBox(height: 20),
+            // List Riwayat
             Expanded(child: HistoryList(history: _controller.history)),
           ],
         ),
