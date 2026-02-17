@@ -6,10 +6,8 @@ import '../widgets/action_buttons.dart';
 import '../onboarding/onboarding_view.dart';
 
 class CounterView extends StatefulWidget {
-  // [Modul 2 - Langkah 5] Menambahkan variabel final untuk menampung nama
   final String username;
 
-  // [Modul 2 - Langkah 5] Update Constructor agar mewajibkan (required) kiriman nama
   const CounterView({super.key, required this.username});
 
   @override
