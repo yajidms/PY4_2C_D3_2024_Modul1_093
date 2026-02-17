@@ -16,6 +16,21 @@ class CounterView extends StatefulWidget {
 
 class _CounterViewState extends State<CounterView> {
   final CounterController _controller = CounterController();
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    await _controller.initUser(widget.username);
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
 
   void _onReset() {
     showDialog(
@@ -88,7 +103,9 @@ class _CounterViewState extends State<CounterView> {
           ),
         ],
       ),
-      body: Padding(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
@@ -96,9 +113,8 @@ class _CounterViewState extends State<CounterView> {
               "Selamat Datang, ${widget.username}!",
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
 
-            // Widget Header (Slider & Angka)
+            // Header (Slider & Angka)
             CounterHeader(
               step: _controller.step,
               value: _controller.value,
@@ -106,13 +122,10 @@ class _CounterViewState extends State<CounterView> {
             ),
 
             const SizedBox(height: 20),
-
-            // Widget List Riwayat
             Expanded(child: HistoryList(history: _controller.history)),
           ],
         ),
       ),
-
       // Action Button (Reset, Kurang, Tambah)
       floatingActionButton: ActionButtons(
         onIncrement: () => setState(() => _controller.increment()),
