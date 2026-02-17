@@ -17,9 +17,46 @@ class _LoginViewState extends State<LoginView> {
   final TextEditingController _userController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
 
+  bool _obscureText = true;
+  int _failedAttempts = 0;
+  bool _isButtonDisabled = false;
+
+  void _lockLoginButton() {
+    setState(() {
+      _isButtonDisabled = true;
+      _failedAttempts = 0;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Akses terkunci! Tunggu 10 detik."),
+        backgroundColor: Colors.red,
+      ),
+    );
+
+    // Membuka kunci otomatis setelah 10 detik
+    Future.delayed(const Duration(seconds: 10), () {
+      if (mounted) {
+        setState(() {
+          _isButtonDisabled = false;
+        });
+      }
+    });
+  }
+
   void _handleLogin() {
     String user = _userController.text;
     String pass = _passController.text;
+
+    if (user.isEmpty || pass.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Username dan Password tidak boleh kosong!"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
     bool isSuccess = _controller.login(user, pass);
 
@@ -27,14 +64,24 @@ class _LoginViewState extends State<LoginView> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          // Di sini kita kirimkan variabel 'user' ke parameter 'username' di CounterView
           builder: (context) => CounterView(username: user),
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login Gagal! Gunakan admin/123")),
-      );
+      setState(() {
+        _failedAttempts++;
+      });
+      // batas 3x percobaan
+      if (_failedAttempts >= 3) {
+        _lockLoginButton();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Login Gagal! Sisa percobaan: ${3 - _failedAttempts}"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
@@ -52,11 +99,26 @@ class _LoginViewState extends State<LoginView> {
             ),
             TextField(
               controller: _passController,
-              obscureText: true, // Menyembunyikan teks password
-              decoration: const InputDecoration(labelText: "Password"),
+              obscureText: _obscureText,
+              decoration: InputDecoration(
+                labelText: "Password",
+                // Menambahkan ikon (Show/Hide)
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureText ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureText = !_obscureText; //membalikkan nilai true/false
+                    });
+                  },
+                ),
+              ),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(onPressed: _handleLogin, child: const Text("Masuk")),
+            ElevatedButton(onPressed: _isButtonDisabled ? null : _handleLogin,
+              child: Text(_isButtonDisabled ? "Harap Tunggu..." : "Masuk"),
+            ),
           ],
         ),
       ),
