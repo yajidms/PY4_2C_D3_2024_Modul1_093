@@ -31,6 +31,7 @@ class _LoginViewState extends State<LoginView> {
       const SnackBar(
         content: Text("Akses terkunci! Tunggu 10 detik."),
         backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
       ),
     );
 
@@ -45,6 +46,7 @@ class _LoginViewState extends State<LoginView> {
   }
 
   void _handleLogin() {
+    FocusScope.of(context).unfocus();
     String user = _userController.text;
     String pass = _passController.text;
 
@@ -88,38 +90,117 @@ class _LoginViewState extends State<LoginView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Login Gatekeeper")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _userController,
-              decoration: const InputDecoration(labelText: "Username"),
-            ),
-            TextField(
-              controller: _passController,
-              obscureText: _obscureText,
-              decoration: InputDecoration(
-                labelText: "Password",
-                // Menambahkan ikon (Show/Hide)
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureText ? Icons.visibility_off : Icons.visibility,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscureText = !_obscureText; //membalikkan nilai true/false
-                    });
-                  },
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 1. Header (Ikon & Teks Sambutan)
+                const Icon(
+                  Icons.security_rounded, // Ikon yang lebih membulat
+                  size: 80,
+                  color: Colors.deepPurple,
                 ),
-              ),
+                const SizedBox(height: 24),
+                const Text(
+                  "Selamat Datang!",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Silakan masuk dengan akun yang terdaftar untuk melanjutkan.",
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
+
+                // 2. Form Input Username
+                TextField(
+                  controller: _userController,
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    labelText: "Username",
+                    prefixIcon: const Icon(Icons.person_outline),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.deepPurple, width: 1.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 3. Form Input Password
+                TextField(
+                  controller: _passController,
+                  obscureText: _obscureText,
+                  textInputAction: TextInputAction.done, // [UX Upgrade] Tombol 'Done' di keyboard
+                  onSubmitted: (_) => _isButtonDisabled ? null : _handleLogin(), // Bisa login dari enter keyboard
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.deepPurple, width: 1.5),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureText ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.grey.shade600,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureText = !_obscureText;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                // 4. Tombol Login
+                SizedBox(
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: _isButtonDisabled ? null : _handleLogin,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey.shade400,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      _isButtonDisabled ? "Terkunci (Tunggu sebentar)" : "Masuk",
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(onPressed: _isButtonDisabled ? null : _handleLogin,
-              child: Text(_isButtonDisabled ? "Harap Tunggu..." : "Masuk"),
-            ),
-          ],
+          ),
         ),
       ),
     );
