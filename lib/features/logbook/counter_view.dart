@@ -60,6 +60,20 @@ class _CounterViewState extends State<CounterView> {
     );
   }
 
+  //fungsi untuk menentukan salam berdasarkan waktu
+  String _getGreeting() {
+    int hour = DateTime.now().hour;
+
+    if (hour >= 5 && hour < 11) {
+      return "Selamat Pagi";
+    } else if (hour >= 11 && hour < 15) {
+      return "Selamat Siang";
+    } else if (hour >= 15 && hour < 18) {
+      return "Selamat Sore";
+    } else {
+      return "Selamat Malam";
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -110,8 +124,12 @@ class _CounterViewState extends State<CounterView> {
         child: Column(
           children: [
             Text(
-              "Selamat Datang, ${widget.username}!",
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              "${_getGreeting()}, ${widget.username}!",
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple,
+              ),
             ),
             const SizedBox(height: 10),
 

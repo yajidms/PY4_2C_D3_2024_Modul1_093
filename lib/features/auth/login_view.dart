@@ -101,7 +101,7 @@ class _LoginViewState extends State<LoginView> {
               children: [
                 // 1. Header (Ikon & Teks Sambutan)
                 const Icon(
-                  Icons.security_rounded, // Ikon yang lebih membulat
+                  Icons.security_rounded,
                   size: 80,
                   color: Colors.deepPurple,
                 ),
@@ -148,8 +148,8 @@ class _LoginViewState extends State<LoginView> {
                 TextField(
                   controller: _passController,
                   obscureText: _obscureText,
-                  textInputAction: TextInputAction.done, // [UX Upgrade] Tombol 'Done' di keyboard
-                  onSubmitted: (_) => _isButtonDisabled ? null : _handleLogin(), // Bisa login dari enter keyboard
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _isButtonDisabled ? null : _handleLogin(),
                   decoration: InputDecoration(
                     labelText: "Password",
                     prefixIcon: const Icon(Icons.lock_outline),
