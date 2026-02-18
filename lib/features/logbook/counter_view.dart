@@ -90,7 +90,7 @@ class _CounterViewState extends State<CounterView> {
                 builder: (BuildContext context) {
                   return AlertDialog(
                     title: const Text("Konfirmasi Logout"),
-                    content: const Text("Apakah Anda yakin? Data yang belum disimpan mungkin akan hilang."),
+                    content: const Text("Apakah Anda yakin?"),
                     actions: [
                       // Tombol Batal
                       TextButton(
