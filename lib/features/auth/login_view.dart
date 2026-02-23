@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '/features/auth/login_controller.dart';
 // Import View dari fitur lain (Logbook) untuk navigasi
 import '/features/logbook/counter_view.dart';
+import '/features/logbook/log_view.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -66,7 +67,7 @@ class _LoginViewState extends State<LoginView> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => CounterView(username: user),
+          builder: (context) => const LogView(),
         ),
       );
     } else {
