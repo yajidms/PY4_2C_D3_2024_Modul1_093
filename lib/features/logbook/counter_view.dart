@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'counter_controller.dart';
-import '../widgets/counter_header.dart';
-import '../widgets/history_list.dart';
-import '../widgets/action_buttons.dart';
+import '../logbook/widgets/counter_header.dart';
+import '../logbook/widgets/history_list.dart';
+import '../logbook/widgets/action_buttons.dart';
 import '../onboarding/onboarding_view.dart';
 
 class CounterView extends StatefulWidget {
