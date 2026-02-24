@@ -4,7 +4,8 @@ import 'models/log_model.dart';
 import '../onboarding/onboarding_view.dart';
 
 class LogView extends StatefulWidget {
-  const LogView({super.key});
+  final String username;
+  const LogView({super.key, required this.username});
 
   @override
   State<LogView> createState() => _LogViewState();
@@ -97,8 +98,8 @@ class _LogViewState extends State<LogView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Logbook: admin"), // Judul statis atau bisa ambil dari login
-        backgroundColor: Colors.deepPurple[100],
+        title: Text("Logbook: ${widget.username}"), // Judul dinamis dari login
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),

@@ -66,7 +66,7 @@ class _LoginViewState extends State<LoginView> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const LogView(),
+          builder: (context) => LogView(username: user),
         ),
       );
     } else {
