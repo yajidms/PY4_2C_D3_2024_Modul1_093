@@ -39,7 +39,7 @@ class _LogViewState extends State<LogView> {
           children: [
             TextField(
               controller: _titleController,
-              decoration: inputDecoration.copyWith(hintText: "Judul (misal: Latihan Pagi)"),
+              decoration: inputDecoration.copyWith(hintText: "Judul (misal: Oguri Cap)"),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
