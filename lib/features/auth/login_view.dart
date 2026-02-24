@@ -17,15 +17,8 @@ class _LoginViewState extends State<LoginView> {
   final TextEditingController _userController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
 
-  bool _obscureText = true;
-  int _failedAttempts = 0;
-  bool _isButtonDisabled = false;
-
   void _lockLoginButton() {
-    setState(() {
-      _isButtonDisabled = true;
-      _failedAttempts = 0;
-    });
+    _controller.lockLoginButton();
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -34,15 +27,6 @@ class _LoginViewState extends State<LoginView> {
         behavior: SnackBarBehavior.floating,
       ),
     );
-
-    // Membuka kunci otomatis setelah 10 detik
-    Future.delayed(const Duration(seconds: 10), () {
-      if (mounted) {
-        setState(() {
-          _isButtonDisabled = false;
-        });
-      }
-    });
   }
 
   void _handleLogin() {
@@ -70,16 +54,14 @@ class _LoginViewState extends State<LoginView> {
         ),
       );
     } else {
-      setState(() {
-        _failedAttempts++;
-      });
+      _controller.incrementFailedAttempts();
       // batas 3x percobaan
-      if (_failedAttempts >= 3) {
+      if (_controller.failedAttempts.value >= 3) {
         _lockLoginButton();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Login Gagal! Sisa percobaan: ${3 - _failedAttempts}"),
+            content: Text("Login Gagal! Sisa percobaan: ${3 - _controller.failedAttempts.value}"),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -145,58 +127,66 @@ class _LoginViewState extends State<LoginView> {
                 const SizedBox(height: 20),
 
                 // 3. Form Input Password
-                TextField(
-                  controller: _passController,
-                  obscureText: _obscureText,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _isButtonDisabled ? null : _handleLogin(),
-                  decoration: InputDecoration(
-                    labelText: "Password",
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.deepPurple, width: 1.5),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: Colors.grey.shade600,
+                ValueListenableBuilder<bool>(
+                  valueListenable: _controller.obscureText,
+                  builder: (context, obscure, child) {
+                    return TextField(
+                      controller: _passController,
+                      obscureText: obscure,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _controller.isButtonDisabled.value ? null : _handleLogin(),
+                      decoration: InputDecoration(
+                        labelText: "Password",
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: Colors.deepPurple, width: 1.5),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscure ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.grey.shade600,
+                          ),
+                          onPressed: () {
+                            _controller.toggleObscureText();
+                          },
+                        ),
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureText = !_obscureText;
-                        });
-                      },
-                    ),
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 40),
 
                 // 4. Tombol Login
-                SizedBox(
-                  height: 55,
-                  child: ElevatedButton(
-                    onPressed: _isButtonDisabled ? null : _handleLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: Colors.grey.shade400,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                ValueListenableBuilder<bool>(
+                  valueListenable: _controller.isButtonDisabled,
+                  builder: (context, isDisabled, child) {
+                    return SizedBox(
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: isDisabled ? null : _handleLogin,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.grey.shade400,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: Text(
+                          isDisabled ? "Terkunci (Tunggu sebentar)" : "Masuk",
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      _isButtonDisabled ? "Terkunci (Tunggu sebentar)" : "Masuk",
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ],
             ),

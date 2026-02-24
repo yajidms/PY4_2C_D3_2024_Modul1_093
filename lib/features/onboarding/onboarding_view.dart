@@ -10,7 +10,7 @@ class OnboardingView extends StatefulWidget {
 
 class _OnboardingViewState extends State<OnboardingView> {
   final PageController _pageController = PageController(initialPage: 0);
-  int _currentIndex = 0;
+  final ValueNotifier<int> _currentIndex = ValueNotifier(0);
 
   // Data konten (Gambar, Judul, Deskripsi)
   final List<Map<String, String>> onboardingData = [
@@ -63,9 +63,7 @@ class _OnboardingViewState extends State<OnboardingView> {
               child: PageView.builder(
                 controller: _pageController,
                 onPageChanged: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
+                  _currentIndex.value = index;
                 },
                 itemCount: onboardingData.length,
                 itemBuilder: (context, index) {
@@ -112,47 +110,52 @@ class _OnboardingViewState extends State<OnboardingView> {
             // Indikator & button
             Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Column(
-                children: [
-                  // Titik Indikator (Page Indicator)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      onboardingData.length,
-                          (index) => buildDot(index, context),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  // Tombol Lanjut/Mulai
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (_currentIndex == onboardingData.length - 1) {
-                          _goToLogin();
-                        } else {
-                          _pageController.nextPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+              child: ValueListenableBuilder<int>(
+                valueListenable: _currentIndex,
+                builder: (context, currentIndex, child) {
+                  return Column(
+                    children: [
+                      // Titik Indikator (Page Indicator)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          onboardingData.length,
+                              (index) => _buildDot(index, currentIndex),
                         ),
-                        elevation: 0,
                       ),
-                      child: Text(
-                        _currentIndex == onboardingData.length - 1 ? "Mulai Sekarang" : "Lanjut",
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      const SizedBox(height: 32),
+                      // Tombol Lanjut/Mulai
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (currentIndex == onboardingData.length - 1) {
+                              _goToLogin();
+                            } else {
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            currentIndex == onboardingData.length - 1 ? "Mulai Sekarang" : "Lanjut",
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -162,14 +165,14 @@ class _OnboardingViewState extends State<OnboardingView> {
   }
 
   // Widget khusus untuk menggambar titik indikator
-  Widget buildDot(int index, BuildContext context) {
+  Widget _buildDot(int index, int currentIndex) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.only(right: 8),
       height: 10,
-      width: _currentIndex == index ? 24 : 10,
+      width: currentIndex == index ? 24 : 10,
       decoration: BoxDecoration(
-        color: _currentIndex == index ? Colors.deepPurple : Colors.grey.shade300,
+        color: currentIndex == index ? Colors.deepPurple : Colors.grey.shade300,
         borderRadius: BorderRadius.circular(10),
       ),
     );
