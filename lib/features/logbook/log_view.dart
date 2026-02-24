@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'log_controller.dart';
 import 'models/log_model.dart';
+import '../onboarding/onboarding_view.dart';
 
 class LogView extends StatefulWidget {
   const LogView({super.key});
@@ -47,9 +48,6 @@ class _LogViewState extends State<LogView> {
                 _titleController.text,
                 _contentController.text,
               );
-
-              // Trigger UI Refresh (Sesuai instruksi modul snippet 111)
-              setState(() {});
 
               // Bersihkan input dan tutup dialog
               _titleController.clear();
@@ -101,6 +99,43 @@ class _LogViewState extends State<LogView> {
       appBar: AppBar(
         title: const Text("Logbook: admin"), // Judul statis atau bisa ambil dari login
         backgroundColor: Colors.deepPurple[100],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text("Konfirmasi Logout"),
+                    content: const Text("Apakah Anda yakin ingin keluar?"),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text("Batal"),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Tutup dialog
+                          Navigator.pop(context);
+                          // Navigasi ke halaman Onboarding dan hapus semua route sebelumnya
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const OnboardingView(),
+                            ),
+                                (route) => false,
+                          );
+                        },
+                        child: const Text("Ya, Keluar", style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: ValueListenableBuilder<List<LogModel>>(
         valueListenable: _controller.logsNotifier,
@@ -125,7 +160,7 @@ class _LogViewState extends State<LogView> {
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () {
-                          setState(() => _controller.removeLog(index));
+                          _controller.removeLog(index);
                         },
                       ),
                     ],
