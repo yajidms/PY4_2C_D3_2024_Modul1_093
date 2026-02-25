@@ -22,6 +22,24 @@ class _LogViewState extends State<LogView> {
   final TextEditingController _contentController = TextEditingController();
 
   //bagian untuk menampilkan dialog tambah/edit log
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Pekerjaan': return Icons.work_outline;
+      case 'Urgent': return Icons.warning_amber_rounded;
+      case 'Kuliah': return Icons.school_outlined;
+      default: return Icons.person_outline; // Pribadi
+    }
+  }
+
+  Color _getCategoryIconColor(String category) {
+    switch (category) {
+      case 'Pekerjaan': return Colors.blue;
+      case 'Urgent': return Colors.red;
+      case 'Kuliah': return Colors.orange;
+      default: return Colors.teal; // Pribadi
+    }
+  }
+
   void _showLogDialog(BuildContext context, {int? index, LogModel? log}) {
     _titleController.text = log?.title ?? '';
     _contentController.text = log?.description ?? '';
@@ -63,7 +81,16 @@ class _LogViewState extends State<LogView> {
                 return DropdownButton<String>(
                   value: value,
                   isExpanded: true,
-                  items: categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                  items: categories.map((cat) => DropdownMenuItem(
+                    value: cat,
+                    child: Row(
+                      children: [
+                        Icon(_getCategoryIcon(cat), size: 18, color: _getCategoryIconColor(cat)),
+                        const SizedBox(width: 8),
+                        Text(cat),
+                      ],
+                    ),
+                  )).toList(),
                   onChanged: (val) => categoryNotifier.value = val!,
                 );
               },
