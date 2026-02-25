@@ -21,19 +21,26 @@ class _LogViewState extends State<LogView> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
 
-  //bagian untuk menampilkan dialog tambah log baru
-  void _showAddLogDialog() {
+  //bagian untuk menampilkan dialog tambah/edit log
+  void _showLogDialog(BuildContext context, {int? index, LogModel? log}) {
+    _titleController.text = log?.title ?? '';
+    _contentController.text = log?.description ?? '';
+
+    final categoryNotifier = ValueNotifier<String>(log?.category ?? 'Pribadi');
+    final categories = ['Pribadi', 'Pekerjaan', 'Kuliah', 'Urgent'];
+
     final inputDecoration = InputDecoration(
       filled: true,
       fillColor: Colors.grey.shade50,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), // Dialog membulat
-        title: const Text("Catatan Baru", style: TextStyle(fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(log == null ? "Catatan Baru" : "Edit Catatan", style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -47,6 +54,19 @@ class _LogViewState extends State<LogView> {
               controller: _contentController,
               decoration: inputDecoration.copyWith(hintText: "Detail deskripsi..."),
               maxLines: 3,
+            ),
+            const SizedBox(height: 16),
+            // Dropdown Reaktif
+            ValueListenableBuilder<String>(
+              valueListenable: categoryNotifier,
+              builder: (context, value, child) {
+                return DropdownButton<String>(
+                  value: value,
+                  isExpanded: true,
+                  items: categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                  onChanged: (val) => categoryNotifier.value = val!,
+                );
+              },
             ),
           ],
         ),
@@ -65,60 +85,16 @@ class _LogViewState extends State<LogView> {
             ),
             onPressed: () {
               if(_titleController.text.isNotEmpty) {
-                _controller.addLog(_titleController.text, _contentController.text);
+                if (log == null) {
+                  _controller.addLog(_titleController.text, _contentController.text, categoryNotifier.value);
+                } else {
+                  _controller.updateLog(index!, _titleController.text, _contentController.text, categoryNotifier.value);
+                }
                 _titleController.clear(); _contentController.clear();
                 Navigator.pop(context);
               }
             },
-            child: const Text("Simpan"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  //bagian untuk menampilkan dialog edit log yang sudah ada
-  void _showEditLogDialog(int index, LogModel log) {
-    final inputDecoration = InputDecoration(
-      filled: true,
-      fillColor: Colors.grey.shade50,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-    );
-
-    _titleController.text = log.title;
-    _contentController.text = log.description;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Edit Catatan", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: _titleController, decoration: inputDecoration, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            TextField(controller: _contentController, decoration: inputDecoration, maxLines: 3),
-          ],
-        ),
-        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Batal", style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _kAccentBlue,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              _controller.updateLog(index, _titleController.text, _contentController.text);
-              _titleController.clear(); _contentController.clear();
-              Navigator.pop(context);
-            },
-            child: const Text("Update"),
+            child: Text(log == null ? "Simpan" : "Update"),
           ),
         ],
       ),
@@ -153,9 +129,26 @@ class _LogViewState extends State<LogView> {
           ),
         ],
       ),
-      body: ValueListenableBuilder<List<LogModel>>(
-        valueListenable: _controller.logsNotifier,
-        builder: (context, currentLogs, child) {
+      body: Column(
+        children: [
+          //search bar dengan padding
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              onChanged: (val) => _controller.searchLog(val),
+              decoration: InputDecoration(
+                hintText: "Cari catatan...",
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ValueListenableBuilder<List<LogModel>>(
+              valueListenable: _controller.filteredLogs,
+              builder: (context, currentLogs, child) {
           if (currentLogs.isEmpty) {
             return Center(
               child: Column(
@@ -176,7 +169,7 @@ class _LogViewState extends State<LogView> {
               final log = currentLogs[index];
               return LogItemWidget(
                 log: log,
-                onEditPressed: () => _showEditLogDialog(index, log),
+                onEditPressed: () => _showLogDialog(context, index: index, log: log),
                 onDeletePressed: () {
                   final deletedTitle = log.title;
                   _controller.removeLog(index);
@@ -209,8 +202,11 @@ class _LogViewState extends State<LogView> {
           );
         },
       ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddLogDialog,
+        onPressed: () => _showLogDialog(context),
         backgroundColor: _kAccentBlue, // Tombol tambah warna biru
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text("Catatan Baru", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
