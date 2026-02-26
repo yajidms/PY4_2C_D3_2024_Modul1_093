@@ -255,11 +255,32 @@ class _LogViewState extends State<LogView> {
                   itemCount: currentLogs.length,
                   itemBuilder: (context, index) {
                     final log = currentLogs[index];
-                    return LogItemWidget(
-                      log: log,
-                      onEditPressed: () =>
-                          _showLogDialog(context, index: index, log: log),
-                      onDeletePressed: () {
+                    //swipe delete
+                    return Dismissible(
+                      key: Key(log.date),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.delete, color: Colors.white, size: 28),
+                            SizedBox(height: 4),
+                            Text(
+                              "Hapus",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      onDismissed: (direction) {
                         final deletedTitle = log.title;
                         _controller.removeLog(index);
                         ScaffoldMessenger.of(context).clearSnackBars();
@@ -289,6 +310,41 @@ class _LogViewState extends State<LogView> {
                           ),
                         );
                       },
+                      child: LogItemWidget(
+                        log: log,
+                        onEditPressed: () =>
+                            _showLogDialog(context, index: index, log: log),
+                        onDeletePressed: () {
+                          final deletedTitle = log.title;
+                          _controller.removeLog(index);
+                          ScaffoldMessenger.of(context).clearSnackBars();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Catatan "$deletedTitle" telah dihapus',
+                                      style: const TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              margin: const EdgeInsets.all(16),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        },
+                      ),
                     );
                   },
                 );
