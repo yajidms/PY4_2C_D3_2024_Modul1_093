@@ -2,7 +2,7 @@
 ---
 ## Modul 4_Part 1
 
-<img src="./img.png" width="30%"> <img src="./img1.png" width="30%"> <img src="./img2.png" width="30%"> <img src="./img3.png" width="30%">
+<img src="./img.png" width="30%"> <img src="./img1.png" width="30%"> <img src="./img2.jpg" width="30%"> <img src="./img3.png" width="30%">
 
 ## Konfigurasi .env (Audit Logging)
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/log_model.dart';
 
 //color yang dipakai
@@ -227,7 +228,20 @@ class LogItemWidget extends StatelessWidget {
 
   // fungsi untuk memformat tanggal
   String _formatSimpleDate(DateTime dt) {
-    return "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+    final now = DateTime.now();
+    final difference = now.difference(dt);
+
+    if (difference.inMinutes < 1) {
+      return 'Baru saja';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} menit yang lalu';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} jam yang lalu';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} hari yang lalu';
+    } else {
+      return DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(dt);
+    }
   }
 
 }

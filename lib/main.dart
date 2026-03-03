@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'features/onboarding/onboarding_view.dart';
-import 'services/mongo_service.dart';
-import 'helpers/log_helper.dart';
 
 void main() async {
   // Wajib untuk operasi asinkron sebelum runApp
   WidgetsFlutterBinding.ensureInitialized();
 
   // Load ENV
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: ".env", isOptional: true);
 
-  // Handshake: koneksi ke MongoDB sebelum UI ditampilkan
-  await MongoService().connect();
-  await LogHelper.writeLog(
-    'Aplikasi siap. Infrastruktur data terverifikasi.',
-    source: 'main',
-  );
+  // Inisialisasi format tanggal untuk locale Indonesia
+  await initializeDateFormatting('id_ID', null);
 
   runApp(const MyApp());
 }
@@ -37,7 +32,6 @@ class MyApp extends StatelessWidget {
       home: const OnboardingView(),
     );
   }
-
 }
 
 class MyHomePage extends StatefulWidget {
@@ -107,7 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
-          mainAxisAlignment: .center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('You have pushed the button this many times:'),
             Text(
