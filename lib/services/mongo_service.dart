@@ -99,7 +99,7 @@ class MongoService {
     try {
       final collection = await _getSafeCollection();
       await LogHelper.writeLog(
-        'INFO: Fetching data from Cloud...',
+        'READ: Mulai fetch logs untuk user=$username',
         source: _source,
         level: 3,
       );
@@ -108,7 +108,7 @@ class MongoService {
           .find(where.eq('username', username))
           .toList();
       await LogHelper.writeLog(
-        'SUCCESS: ${data.length} data berhasil diambil.',
+        'READ: ${data.length} log berhasil diambil untuk user=$username.',
         source: _source,
         level: 2,
       );
@@ -128,10 +128,15 @@ class MongoService {
   Future<void> insertLog(Logbook log) async {
     try {
       final collection = await _getSafeCollection();
+      await LogHelper.writeLog(
+        "CREATE: Menyimpan log '${log.title}' untuk user=${log.username}",
+        source: _source,
+        level: 3,
+      );
       await collection.insertOne(log.toMap());
 
       await LogHelper.writeLog(
-        "SUCCESS: Data '${log.title}' Saved to Cloud",
+        "CREATE: Data '${log.title}' berhasil disimpan.",
         source: _source,
         level: 2,
       );
@@ -153,13 +158,18 @@ class MongoService {
         throw Exception('ID Log tidak ditemukan untuk update');
       }
 
+      await LogHelper.writeLog(
+        "UPDATE: Memperbarui log id=${log.id} user=${log.username}",
+        source: _source,
+        level: 3,
+      );
       await collection.replaceOne(
         where.id(log.id!).eq('username', log.username),
         log.toMap(),
       );
 
       await LogHelper.writeLog(
-        "DATABASE: Update '${log.title}' Berhasil",
+        "UPDATE: Log '${log.title}' berhasil diperbarui.",
         source: _source,
         level: 2,
       );
@@ -177,10 +187,15 @@ class MongoService {
   Future<void> deleteLog(ObjectId id, String username) async {
     try {
       final collection = await _getSafeCollection();
+      await LogHelper.writeLog(
+        'DELETE: Menghapus log id=$id user=$username',
+        source: _source,
+        level: 3,
+      );
       await collection.remove(where.id(id).eq('username', username));
 
       await LogHelper.writeLog(
-        'DATABASE: Hapus ID $id Berhasil',
+        'DELETE: Hapus ID $id berhasil untuk user=$username.',
         source: _source,
         level: 2,
       );
