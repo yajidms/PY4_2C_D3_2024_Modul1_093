@@ -1,7 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'features/onboarding/onboarding_view.dart';
+import 'services/mongo_service.dart';
+import 'helpers/log_helper.dart';
 
-void main() {
+void main() async {
+  // Wajib untuk operasi asinkron sebelum runApp
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Load ENV
+  await dotenv.load(fileName: ".env");
+
+  // Handshake: koneksi ke MongoDB sebelum UI ditampilkan
+  await MongoService().connect();
+  await LogHelper.writeLog(
+    'Aplikasi siap. Infrastruktur data terverifikasi.',
+    source: 'main',
+  );
+
   runApp(const MyApp());
 }
 

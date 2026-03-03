@@ -8,7 +8,7 @@ const Color _kTextDark = Color(0xFF2D3E50);
 const Color _kTextLight = Color(0xFF7F8C8D);
 
 class LogItemWidget extends StatelessWidget {
-  final LogModel log;
+  final Logbook log;
   final VoidCallback onEditPressed;
   final VoidCallback onDeletePressed;
 
@@ -28,7 +28,7 @@ class LogItemWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -77,39 +77,35 @@ class LogItemWidget extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      // Chip Kategori dengan Ikon
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                      // Chip tipe catatan
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.cloud_done_outlined,
+                              size: 13,
+                              color: Colors.blue,
                             ),
-                            decoration: BoxDecoration(
-                              color: _getCategoryColor(log.category),
-                              borderRadius: BorderRadius.circular(20),
+                            SizedBox(width: 4),
+                            Text(
+                              'Cloud',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue,
+                              ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _getCategoryIcon(log.category),
-                                  size: 13,
-                                  color: _getCategoryIconColor(log.category),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  log.category,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: _getCategoryIconColor(log.category),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 8),
                       // Deskripsi
@@ -159,54 +155,9 @@ class LogItemWidget extends StatelessWidget {
   }
 
   // fungsi untuk memformat tanggal
-  String _formatSimpleDate(String dateString) {
-    try {
-      final DateTime dt = DateTime.parse(dateString);
-      return "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
-    } catch (e) {
-      return "";
-    }
+  String _formatSimpleDate(DateTime dt) {
+    return "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
   }
 
-  // Helper Ikon Kategori
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Pekerjaan':
-        return Icons.work_outline;
-      case 'Urgent':
-        return Icons.warning_amber_rounded;
-      case 'Kuliah':
-        return Icons.school_outlined;
-      default:
-        return Icons.person_outline; // Pribadi
-    }
-  }
-
-  // Helper Warna Ikon Kategori
-  Color _getCategoryIconColor(String category) {
-    switch (category) {
-      case 'Pekerjaan':
-        return Colors.blue;
-      case 'Urgent':
-        return Colors.red;
-      case 'Kuliah':
-        return Colors.orange;
-      default:
-        return Colors.teal;
-    }
-  }
-
-  // Helper Warna Background Chip Kategori
-  Color _getCategoryColor(String category) {
-    switch (category) {
-      case 'Pekerjaan':
-        return Colors.blue.shade50;
-      case 'Urgent':
-        return Colors.red.shade50;
-      case 'Kuliah':
-        return Colors.orange.shade50;
-      default:
-        return Colors.teal.shade50;
-    }
-  }
 }
+

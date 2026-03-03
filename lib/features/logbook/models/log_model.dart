@@ -1,33 +1,33 @@
-class LogModel {
-  final String title;
-  final String date;
-  final String description;
-  final String category;
+import 'package:mongo_dart/mongo_dart.dart';
 
-  LogModel({
+class Logbook {
+  final ObjectId? id; // Penanda unik global dari MongoDB
+  final String title;
+  final String description;
+  final DateTime date;
+
+  Logbook({
+    this.id,
     required this.title,
-    required this.date,
     required this.description,
-    required this.category,
+    required this.date,
   });
 
-  // Untuk Tugas HOTS: Konversi Map (JSON) ke Object
-  factory LogModel.fromMap(Map<String, dynamic> map) {
-    return LogModel(
-      title: map['title'],
-      date: map['date'],
-      description: map['description'],
-      category: map['category'],
-    );
-  }
-
-  // Konversi Object ke Map (JSON) untuk disimpan
   Map<String, dynamic> toMap() {
     return {
+      '_id': id ?? ObjectId(),
       'title': title,
-      'date': date,
       'description': description,
-      'category': category,
+      'date': date.toIso8601String(),
     };
+  }
+
+  factory Logbook.fromMap(Map<String, dynamic> map) {
+    return Logbook(
+      id: map['_id'] as ObjectId?,
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
+    );
   }
 }

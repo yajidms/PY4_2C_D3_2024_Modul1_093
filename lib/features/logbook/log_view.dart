@@ -3,6 +3,8 @@ import '../onboarding/onboarding_view.dart';
 import 'log_controller.dart';
 import 'models/log_model.dart';
 import 'widgets/log_item_widget.dart';
+import '../../services/mongo_service.dart';
+import '../../helpers/log_helper.dart';
 
 const Color _kBgColor = Color(0xFFF7F5DE);
 const Color _kAccentBlue = Color(0xFF3D8BE8);
@@ -17,43 +19,83 @@ class LogView extends StatefulWidget {
 }
 
 class _LogViewState extends State<LogView> {
-  final LogController _controller = LogController();
+  late LogController _controller;
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
 
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = LogController();
+    Future.microtask(() => _initDatabase());
+  }
+
+  Future<void> _initDatabase() async {
+    setState(() => _isLoading = true);
+    try {
+      await LogHelper.writeLog(
+        "UI: Memulai inisialisasi database...",
+        source: "log_view.dart",
+      );
+
+      //koneksi ke MongoDB Atlas (Cloud)
+      await LogHelper.writeLog(
+        "UI: Menghubungi MongoService.connect()...",
+        source: "log_view.dart",
+      );
+
+      await MongoService().connect().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => throw Exception(
+          "Koneksi Cloud Timeout. Periksa sinyal/IP Whitelist.",
+        ),
+      );
+
+      await LogHelper.writeLog(
+        "UI: Koneksi MongoService BERHASIL.",
+        source: "log_view.dart",
+      );
+
+      // Mengambil data log dari Cloud
+      await LogHelper.writeLog(
+        "UI: Memanggil controller.loadFromDisk()...",
+        source: "log_view.dart",
+      );
+
+      await _controller.loadFromDisk();
+
+      await LogHelper.writeLog(
+        "UI: Data berhasil dimuat ke Notifier.",
+        source: "log_view.dart",
+      );
+    } catch (e) {
+      await LogHelper.writeLog(
+        "UI: Error - $e",
+        source: "log_view.dart",
+        level: 1,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Masalah: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      // Apapun yang terjadi (Sukses/Gagal/Data Kosong), loading harus mati
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   //bagian untuk menampilkan dialog tambah/edit log
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Pekerjaan':
-        return Icons.work_outline;
-      case 'Urgent':
-        return Icons.warning_amber_rounded;
-      case 'Kuliah':
-        return Icons.school_outlined;
-      default:
-        return Icons.person_outline; // Pribadi
-    }
-  }
-
-  Color _getCategoryIconColor(String category) {
-    switch (category) {
-      case 'Pekerjaan':
-        return Colors.blue;
-      case 'Urgent':
-        return Colors.red;
-      case 'Kuliah':
-        return Colors.orange;
-      default:
-        return Colors.teal; // Pribadi
-    }
-  }
-
-  void _showLogDialog(BuildContext context, {int? index, LogModel? log}) {
+  void _showLogDialog(BuildContext context, {int? index, Logbook? log}) {
     _titleController.text = log?.title ?? '';
     _contentController.text = log?.description ?? '';
-
-    final categoryNotifier = ValueNotifier<String>(log?.category ?? 'Pribadi');
-    final categories = ['Pribadi', 'Pekerjaan', 'Kuliah', 'Urgent'];
 
     final inputDecoration = InputDecoration(
       filled: true,
@@ -91,36 +133,6 @@ class _LogViewState extends State<LogView> {
               ),
               maxLines: 3,
             ),
-            const SizedBox(height: 16),
-            // Dropdown Reaktif
-            ValueListenableBuilder<String>(
-              valueListenable: categoryNotifier,
-              builder: (context, value, child) {
-                return DropdownButton<String>(
-                  value: value,
-                  isExpanded: true,
-                  items: categories
-                      .map(
-                        (cat) => DropdownMenuItem(
-                          value: cat,
-                          child: Row(
-                            children: [
-                              Icon(
-                                _getCategoryIcon(cat),
-                                size: 18,
-                                color: _getCategoryIconColor(cat),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(cat),
-                            ],
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (val) => categoryNotifier.value = val!,
-                );
-              },
-            ),
           ],
         ),
         actionsPadding: const EdgeInsets.symmetric(
@@ -143,20 +155,11 @@ class _LogViewState extends State<LogView> {
             ),
             onPressed: () {
               if (_titleController.text.isNotEmpty) {
-                if (log == null) {
-                  _controller.addLog(
-                    _titleController.text,
-                    _contentController.text,
-                    categoryNotifier.value,
-                  );
-                } else {
-                  _controller.updateLog(
-                    index!,
-                    _titleController.text,
-                    _contentController.text,
-                    categoryNotifier.value,
-                  );
-                }
+                _controller.addLog(
+                  _titleController.text,
+                  _contentController.text,
+                  '',
+                );
                 _titleController.clear();
                 _contentController.clear();
                 Navigator.pop(context);
@@ -174,7 +177,7 @@ class _LogViewState extends State<LogView> {
     return Scaffold(
       backgroundColor: _kBgColor,
       appBar: AppBar(
-        backgroundColor: Colors.black.withOpacity(0.05),
+        backgroundColor: Colors.black.withValues(alpha: 0.05),
         elevation: 0.5,
         centerTitle: false,
         title: Column(
@@ -225,49 +228,64 @@ class _LogViewState extends State<LogView> {
             ),
           ),
           Expanded(
-            child: ValueListenableBuilder<List<LogModel>>(
+            child: ValueListenableBuilder<List<Logbook>>(
               valueListenable: _controller.filteredLogs,
               builder: (context, currentLogs, child) {
+                if (_isLoading) {
+                  return const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(color: _kAccentBlue),
+                        SizedBox(height: 16),
+                        Text("Menghubungkan ke MongoDB Atlas..."),
+                      ],
+                    ),
+                  );
+                }
+
                 if (currentLogs.isEmpty) {
                   return Center(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.note_alt_outlined,
-                          size: 64,
-                          color: Colors.grey.shade300,
-                        ),
+                        const Icon(Icons.cloud_off, size: 64, color: Colors.grey),
                         const SizedBox(height: 16),
-                        Text(
-                          "Belum ada catatan.",
-                          style: TextStyle(color: Colors.grey.shade500),
+                        const Text("Belum ada catatan di Cloud."),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: () => _showLogDialog(context),
+                          child: const Text("Buat Catatan Pertama"),
                         ),
                       ],
                     ),
                   );
                 }
-                //ListView dengan padding vertikal
+
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                  ), // Padding atas bawah list
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   itemCount: currentLogs.length,
                   itemBuilder: (context, index) {
                     final log = currentLogs[index];
-                    //swipe delete
                     return Dismissible(
-                      key: Key(log.date),
+                      key: Key(log.id?.oid ?? log.date.toIso8601String()),
                       direction: DismissDirection.endToStart,
                       background: Container(
                         color: Colors.red,
                         alignment: Alignment.centerRight,
                         padding: const EdgeInsets.only(right: 20),
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         child: const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.delete, color: Colors.white, size: 28),
+                            Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                              size: 28,
+                            ),
                             SizedBox(height: 4),
                             Text(
                               "Hapus",
@@ -296,7 +314,9 @@ class _LogViewState extends State<LogView> {
                                 Expanded(
                                   child: Text(
                                     'Catatan "$deletedTitle" telah dihapus',
-                                    style: const TextStyle(color: Colors.white),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -330,7 +350,9 @@ class _LogViewState extends State<LogView> {
                                   Expanded(
                                     child: Text(
                                       'Catatan "$deletedTitle" telah dihapus',
-                                      style: const TextStyle(color: Colors.white),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ],
