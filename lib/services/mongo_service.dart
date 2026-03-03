@@ -13,8 +13,6 @@ class MongoService {
   Db? _db;
   DbCollection? _collection;
 
-  static const String _defaultDbName = 'logbook_db';
-  static const String _defaultCollectionName = 'logs';
   final String _source = 'mongo_service.dart';
 
   String _ensureDatabaseInUri(String rawUri, String dbName) {
@@ -44,13 +42,20 @@ class MongoService {
   Future<void> connect() async {
     try {
       final dbUri = dotenv.env['MONGODB_URI'];
-      if (dbUri == null || dbUri.isEmpty) {
+      if (dbUri == null || dbUri.trim().isEmpty) {
         throw Exception('MONGODB_URI tidak ditemukan di .env');
       }
 
-      final dbName = (dotenv.env['MONGODB_DB_NAME'] ?? _defaultDbName).trim();
-      final collectionName =
-          (dotenv.env['MONGODB_COLLECTION_NAME'] ?? _defaultCollectionName).trim();
+      final dbName = dotenv.env['MONGODB_DB_NAME']?.trim();
+      if (dbName == null || dbName.isEmpty) {
+        throw Exception('MONGODB_DB_NAME tidak ditemukan di .env');
+      }
+
+      final collectionName = dotenv.env['MONGODB_COLLECTION_NAME']?.trim();
+      if (collectionName == null || collectionName.isEmpty) {
+        throw Exception('MONGODB_COLLECTION_NAME tidak ditemukan di .env');
+      }
+
       final normalizedUri = _ensureDatabaseInUri(dbUri, dbName);
 
       if (_db != null && _db!.isConnected && _collection != null) {
