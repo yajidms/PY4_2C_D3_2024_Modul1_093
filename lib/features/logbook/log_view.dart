@@ -311,136 +311,147 @@ class _LogViewState extends State<LogView> {
                   );
                 }
 
-                if (currentLogs.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.cloud_off, size: 64, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        const Text("Belum ada catatan di Cloud."),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: () => _showLogDialog(context),
-                          child: const Text("Buat Catatan Pertama"),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
                 return RefreshIndicator(
                   color: _kAccentBlue,
                   onRefresh: _refreshData,
-                  child: ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    itemCount: currentLogs.length,
-                    itemBuilder: (context, index) {
-                      final log = currentLogs[index];
-                      return Dismissible(
-                        key: Key(log.id?.oid ?? log.date.toIso8601String()),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          color: Colors.red,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.delete,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                "Hapus",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        onDismissed: (direction) {
-                          final deletedTitle = log.title;
-                          _controller.removeLog(index);
-                          ScaffoldMessenger.of(context).clearSnackBars();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.delete_outline,
-                                    color: Colors.white,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      'Catatan "$deletedTitle" telah dihapus',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              margin: const EdgeInsets.all(16),
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                        },
-                        child: LogItemWidget(
-                          log: log,
-                          onEditPressed: () =>
-                              _showLogDialog(context, index: index, log: log),
-                          onDeletePressed: () {
-                            final deletedTitle = log.title;
-                            _controller.removeLog(index);
-                            ScaffoldMessenger.of(context).clearSnackBars();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Row(
+                  child: currentLogs.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          children: [
+                            SizedBox(
+                              height: 420,
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     const Icon(
-                                      Icons.delete_outline,
-                                      color: Colors.white,
+                                      Icons.cloud_off,
+                                      size: 64,
+                                      color: Colors.grey,
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        'Catatan "$deletedTitle" telah dihapus',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                        ),
+                                    const SizedBox(height: 16),
+                                    const Text("Belum ada catatan di Cloud."),
+                                    const SizedBox(height: 12),
+                                    ElevatedButton(
+                                      onPressed: () => _showLogDialog(context),
+                                      child: const Text("Buat Catatan Pertama"),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          itemCount: currentLogs.length,
+                          itemBuilder: (context, index) {
+                            final log = currentLogs[index];
+                            return Dismissible(
+                              key: Key(log.id?.oid ?? log.date.toIso8601String()),
+                              direction: DismissDirection.endToStart,
+                              background: Container(
+                                color: Colors.red,
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 20),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                child: const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.delete,
+                                      color: Colors.white,
+                                      size: 28,
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      "Hapus",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ],
                                 ),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                margin: const EdgeInsets.all(16),
-                                duration: const Duration(seconds: 3),
+                              ),
+                              onDismissed: (direction) {
+                                final deletedTitle = log.title;
+                                _controller.removeLog(index);
+                                ScaffoldMessenger.of(context).clearSnackBars();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            'Catatan "$deletedTitle" telah dihapus',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    margin: const EdgeInsets.all(16),
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              },
+                              child: LogItemWidget(
+                                log: log,
+                                onEditPressed: () =>
+                                    _showLogDialog(context, index: index, log: log),
+                                onDeletePressed: () {
+                                  final deletedTitle = log.title;
+                                  _controller.removeLog(index);
+                                  ScaffoldMessenger.of(context).clearSnackBars();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.white,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              'Catatan "$deletedTitle" telah dihapus',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      margin: const EdgeInsets.all(16),
+                                      duration: const Duration(seconds: 3),
+                                    ),
+                                  );
+                                },
                               ),
                             );
                           },
                         ),
-                      );
-                    },
-                  ),
                 );
               },
             ),

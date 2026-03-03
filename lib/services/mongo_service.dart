@@ -94,33 +94,53 @@ class MongoService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> _fetchRawLogs(String username) async {
+    final collection = await _getSafeCollection();
+    return collection.find(where.eq('username', username)).toList();
+  }
+
   /// READ: Mengambil data dari Cloud.
   Future<List<Logbook>> getLogs(String username) async {
-    try {
-      final collection = await _getSafeCollection();
-      await LogHelper.writeLog(
-        'READ: Mulai fetch logs untuk user=$username',
-        source: _source,
-        level: 3,
-      );
+    await LogHelper.writeLog(
+      'READ: Mulai fetch logs untuk user=$username',
+      source: _source,
+      level: 3,
+    );
 
-      final List<Map<String, dynamic>> data = await collection
-          .find(where.eq('username', username))
-          .toList();
+    try {
+      final data = await _fetchRawLogs(username);
       await LogHelper.writeLog(
         'READ: ${data.length} log berhasil diambil untuk user=$username.',
         source: _source,
         level: 2,
       );
-
       return data.map((json) => Logbook.fromMap(json)).toList();
-    } catch (e) {
+    } catch (firstError) {
       await LogHelper.writeLog(
-        'ERROR: Fetch Failed - $e',
+        'WARN: Fetch pertama gagal, mencoba reconnect sekali lagi - $firstError',
         source: _source,
         level: 1,
       );
-      return [];
+
+      await close();
+      await connect();
+
+      try {
+        final data = await _fetchRawLogs(username);
+        await LogHelper.writeLog(
+          'READ: Reconnect berhasil, ${data.length} log diambil untuk user=$username.',
+          source: _source,
+          level: 2,
+        );
+        return data.map((json) => Logbook.fromMap(json)).toList();
+      } catch (secondError) {
+        await LogHelper.writeLog(
+          'ERROR: Fetch Failed setelah reconnect - $secondError',
+          source: _source,
+          level: 1,
+        );
+        rethrow;
+      }
     }
   }
 
