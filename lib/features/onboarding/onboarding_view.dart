@@ -17,17 +17,19 @@ class _OnboardingViewState extends State<OnboardingView> {
     {
       "image": "assets/images/image1.png",
       "title": "Logbook App",
-      "desc": "Aplikasi untuk mencatat kegiatan harianmu dengan mudah dan praktis."
+      "desc":
+          "Aplikasi untuk mencatat kegiatan harianmu dengan mudah dan praktis.",
     },
     {
       "image": "assets/images/image2.png",
       "title": "Catat Tanpa Lupa",
-      "desc": "Mencatat kegiatan harianmu dengan cepat"
+      "desc": "Mencatat kegiatan harianmu dengan cepat",
     },
     {
       "image": "assets/images/image3.png",
       "title": "Authentikasi Aman",
-      "desc": "Menjaga privasi dan keamanan data catatanmu dengan sistem autentikasi yang kuat"
+      "desc":
+          "Menjaga privasi dan keamanan data catatanmu dengan sistem autentikasi yang kuat",
     },
   ];
 
@@ -53,7 +55,7 @@ class _OnboardingViewState extends State<OnboardingView> {
               "Lewati",
               style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
-          )
+          ),
         ],
       ),
       body: SafeArea(
@@ -120,7 +122,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
                           onboardingData.length,
-                              (index) => _buildDot(index, currentIndex),
+                          (index) => _buildDot(index, currentIndex),
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -148,8 +150,13 @@ class _OnboardingViewState extends State<OnboardingView> {
                             elevation: 0,
                           ),
                           child: Text(
-                            currentIndex == onboardingData.length - 1 ? "Mulai Sekarang" : "Lanjut",
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            currentIndex == onboardingData.length - 1
+                                ? "Mulai Sekarang"
+                                : "Lanjut",
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),

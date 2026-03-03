@@ -49,9 +49,7 @@ class _LoginViewState extends State<LoginView> {
     if (isSuccess) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => LogView(username: user),
-        ),
+        MaterialPageRoute(builder: (context) => LogView(username: user)),
       );
     } else {
       _controller.incrementFailedAttempts();
@@ -61,7 +59,9 @@ class _LoginViewState extends State<LoginView> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Login Gagal! Sisa percobaan: ${3 - _controller.failedAttempts.value}"),
+            content: Text(
+              "Login Gagal! Sisa percobaan: ${3 - _controller.failedAttempts.value}",
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -76,7 +76,10 @@ class _LoginViewState extends State<LoginView> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 32.0,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -120,7 +123,10 @@ class _LoginViewState extends State<LoginView> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.deepPurple, width: 1.5),
+                      borderSide: const BorderSide(
+                        color: Colors.deepPurple,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
@@ -134,7 +140,9 @@ class _LoginViewState extends State<LoginView> {
                       controller: _passController,
                       obscureText: obscure,
                       textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _controller.isButtonDisabled.value ? null : _handleLogin(),
+                      onSubmitted: (_) => _controller.isButtonDisabled.value
+                          ? null
+                          : _handleLogin(),
                       decoration: InputDecoration(
                         labelText: "Password",
                         prefixIcon: const Icon(Icons.lock_outline),
@@ -146,7 +154,10 @@ class _LoginViewState extends State<LoginView> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: Colors.deepPurple, width: 1.5),
+                          borderSide: const BorderSide(
+                            color: Colors.deepPurple,
+                            width: 1.5,
+                          ),
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -182,7 +193,10 @@ class _LoginViewState extends State<LoginView> {
                         ),
                         child: Text(
                           isDisabled ? "Terkunci (Tunggu sebentar)" : "Masuk",
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     );

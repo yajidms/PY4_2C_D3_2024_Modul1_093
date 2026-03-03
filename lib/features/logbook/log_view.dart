@@ -350,7 +350,9 @@ class _LogViewState extends State<LogView> {
                           itemBuilder: (context, index) {
                             final log = currentLogs[index];
                             return Dismissible(
-                              key: Key(log.id?.oid ?? log.date.toIso8601String()),
+                              key: Key(
+                                log.id?.oid ?? log.date.toIso8601String(),
+                              ),
                               direction: DismissDirection.endToStart,
                               background: Container(
                                 color: Colors.red,
@@ -414,12 +416,17 @@ class _LogViewState extends State<LogView> {
                               },
                               child: LogItemWidget(
                                 log: log,
-                                onEditPressed: () =>
-                                    _showLogDialog(context, index: index, log: log),
+                                onEditPressed: () => _showLogDialog(
+                                  context,
+                                  index: index,
+                                  log: log,
+                                ),
                                 onDeletePressed: () {
                                   final deletedTitle = log.title;
                                   _controller.removeLog(index);
-                                  ScaffoldMessenger.of(context).clearSnackBars();
+                                  ScaffoldMessenger.of(
+                                    context,
+                                  ).clearSnackBars();
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Row(
@@ -494,7 +501,7 @@ class _LogViewState extends State<LogView> {
                   MaterialPageRoute(
                     builder: (context) => const OnboardingView(),
                   ),
-                      (route) => false,
+                  (route) => false,
                 );
               },
               child: const Text(

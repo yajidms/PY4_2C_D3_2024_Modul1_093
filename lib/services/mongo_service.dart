@@ -1,6 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mongo_dart/mongo_dart.dart';
-
 import '../features/logbook/models/log_model.dart';
 import '../helpers/log_helper.dart';
 
@@ -18,7 +17,8 @@ class MongoService {
   String _ensureDatabaseInUri(String rawUri, String dbName) {
     final parsedUri = Uri.parse(rawUri);
     final hasDbInPath =
-        parsedUri.pathSegments.isNotEmpty && parsedUri.pathSegments.first.isNotEmpty;
+        parsedUri.pathSegments.isNotEmpty &&
+        parsedUri.pathSegments.first.isNotEmpty;
 
     if (hasDbInPath) {
       return rawUri;

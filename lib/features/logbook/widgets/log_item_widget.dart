@@ -243,5 +243,4 @@ class LogItemWidget extends StatelessWidget {
       return DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(dt);
     }
   }
-
 }

@@ -1,7 +1,7 @@
 import 'package:mongo_dart/mongo_dart.dart';
 
 class Logbook {
-  final ObjectId? id; // Penanda unik global dari MongoDB
+  final ObjectId? id;
   final String title;
   final String description;
   final DateTime date;
