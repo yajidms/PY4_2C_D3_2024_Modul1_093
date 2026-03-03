@@ -19,6 +19,45 @@ class LogItemWidget extends StatelessWidget {
     required this.onDeletePressed,
   });
 
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Pekerjaan':
+        return Icons.work_outline;
+      case 'Urgent':
+        return Icons.warning_amber_rounded;
+      case 'Kuliah':
+        return Icons.school_outlined;
+      default:
+        return Icons.person_outline;
+    }
+  }
+
+  Color _getCategoryIconColor(String category) {
+    switch (category) {
+      case 'Pekerjaan':
+        return Colors.blue;
+      case 'Urgent':
+        return Colors.red;
+      case 'Kuliah':
+        return Colors.orange;
+      default:
+        return Colors.teal;
+    }
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Pekerjaan':
+        return Colors.blue.shade50;
+      case 'Urgent':
+        return Colors.red.shade50;
+      case 'Kuliah':
+        return Colors.orange.shade50;
+      default:
+        return Colors.teal.shade50;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -66,7 +105,6 @@ class LogItemWidget extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          // Menampilkan tanggal
                           Text(
                             _formatSimpleDate(log.date),
                             style: const TextStyle(
@@ -77,38 +115,71 @@ class LogItemWidget extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      // Chip tipe catatan
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.cloud_done_outlined,
-                              size: 13,
-                              color: Colors.blue,
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
                             ),
-                            SizedBox(width: 4),
-                            Text(
-                              'Cloud',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue,
-                              ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                          ],
-                        ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.cloud_done_outlined,
+                                  size: 13,
+                                  color: Colors.blue,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Cloud',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getCategoryColor(log.category),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _getCategoryIcon(log.category),
+                                  size: 13,
+                                  color: _getCategoryIconColor(log.category),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  log.category,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: _getCategoryIconColor(log.category),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 8),
-                      // Deskripsi
                       Text(
                         log.description,
                         style: const TextStyle(
@@ -160,4 +231,3 @@ class LogItemWidget extends StatelessWidget {
   }
 
 }
-

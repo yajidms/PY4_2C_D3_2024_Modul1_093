@@ -5,12 +5,16 @@ class Logbook {
   final String title;
   final String description;
   final DateTime date;
+  final String category;
+  final String username;
 
   Logbook({
     this.id,
     required this.title,
     required this.description,
     required this.date,
+    required this.category,
+    required this.username,
   });
 
   Map<String, dynamic> toMap() {
@@ -19,6 +23,8 @@ class Logbook {
       'title': title,
       'description': description,
       'date': date.toIso8601String(),
+      'category': category,
+      'username': username,
     };
   }
 
@@ -28,6 +34,8 @@ class Logbook {
       title: map['title'] ?? '',
       description: map['description'] ?? '',
       date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
+      category: (map['category'] ?? 'Pribadi').toString(),
+      username: (map['username'] ?? '').toString(),
     );
   }
 }

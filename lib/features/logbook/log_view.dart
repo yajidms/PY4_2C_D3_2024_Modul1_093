@@ -28,7 +28,7 @@ class _LogViewState extends State<LogView> {
   @override
   void initState() {
     super.initState();
-    _controller = LogController();
+    _controller = LogController(username: widget.username);
     Future.microtask(() => _initDatabase());
   }
 
@@ -97,6 +97,9 @@ class _LogViewState extends State<LogView> {
     _titleController.text = log?.title ?? '';
     _contentController.text = log?.description ?? '';
 
+    final categoryNotifier = ValueNotifier<String>(log?.category ?? 'Pribadi');
+    const categories = ['Pribadi', 'Pekerjaan', 'Kuliah', 'Urgent'];
+
     final inputDecoration = InputDecoration(
       filled: true,
       fillColor: Colors.grey.shade50,
@@ -133,6 +136,30 @@ class _LogViewState extends State<LogView> {
               ),
               maxLines: 3,
             ),
+            const SizedBox(height: 16),
+            ValueListenableBuilder<String>(
+              valueListenable: categoryNotifier,
+              builder: (context, value, child) {
+                return DropdownButtonFormField<String>(
+                  initialValue: value,
+                  decoration: inputDecoration,
+                  isExpanded: true,
+                  items: categories
+                      .map(
+                        (cat) => DropdownMenuItem<String>(
+                          value: cat,
+                          child: Text(cat),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      categoryNotifier.value = val;
+                    }
+                  },
+                );
+              },
+            ),
           ],
         ),
         actionsPadding: const EdgeInsets.symmetric(
@@ -155,11 +182,20 @@ class _LogViewState extends State<LogView> {
             ),
             onPressed: () {
               if (_titleController.text.isNotEmpty) {
-                _controller.addLog(
-                  _titleController.text,
-                  _contentController.text,
-                  '',
-                );
+                if (log == null) {
+                  _controller.addLog(
+                    _titleController.text,
+                    _contentController.text,
+                    categoryNotifier.value,
+                  );
+                } else {
+                  _controller.updateLog(
+                    index!,
+                    _titleController.text,
+                    _contentController.text,
+                    categoryNotifier.value,
+                  );
+                }
                 _titleController.clear();
                 _contentController.clear();
                 Navigator.pop(context);
@@ -169,7 +205,7 @@ class _LogViewState extends State<LogView> {
           ),
         ],
       ),
-    );
+    ).then((_) => categoryNotifier.dispose());
   }
 
   @override
@@ -411,7 +447,7 @@ class _LogViewState extends State<LogView> {
                   MaterialPageRoute(
                     builder: (context) => const OnboardingView(),
                   ),
-                  (route) => false,
+                      (route) => false,
                 );
               },
               child: const Text(

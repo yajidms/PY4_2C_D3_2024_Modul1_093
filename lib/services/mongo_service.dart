@@ -90,7 +90,7 @@ class MongoService {
   }
 
   /// READ: Mengambil data dari Cloud.
-  Future<List<Logbook>> getLogs() async {
+  Future<List<Logbook>> getLogs(String username) async {
     try {
       final collection = await _getSafeCollection();
       await LogHelper.writeLog(
@@ -99,7 +99,9 @@ class MongoService {
         level: 3,
       );
 
-      final List<Map<String, dynamic>> data = await collection.find().toList();
+      final List<Map<String, dynamic>> data = await collection
+          .find(where.eq('username', username))
+          .toList();
       await LogHelper.writeLog(
         'SUCCESS: ${data.length} data berhasil diambil.',
         source: _source,
@@ -146,7 +148,10 @@ class MongoService {
         throw Exception('ID Log tidak ditemukan untuk update');
       }
 
-      await collection.replaceOne(where.id(log.id!), log.toMap());
+      await collection.replaceOne(
+        where.id(log.id!).eq('username', log.username),
+        log.toMap(),
+      );
 
       await LogHelper.writeLog(
         "DATABASE: Update '${log.title}' Berhasil",
@@ -164,10 +169,10 @@ class MongoService {
   }
 
   /// DELETE: Menghapus dokumen berdasarkan ObjectId.
-  Future<void> deleteLog(ObjectId id) async {
+  Future<void> deleteLog(ObjectId id, String username) async {
     try {
       final collection = await _getSafeCollection();
-      await collection.remove(where.id(id));
+      await collection.remove(where.id(id).eq('username', username));
 
       await LogHelper.writeLog(
         'DATABASE: Hapus ID $id Berhasil',

@@ -9,11 +9,11 @@ import '../../services/mongo_service.dart';
 import '../logbook/models/log_model.dart';
 
 class LogController {
-  static final LogController _instance = LogController._internal();
-  factory LogController() => _instance;
+  final String _activeUsername;
 
-  LogController._internal() {
-    // Warm start: tampilkan cache lokal dulu tanpa langsung hit cloud.
+  LogController({required String username})
+      : _activeUsername = username.trim().toLowerCase() {
+    // Warm start: tampilkan cache lokal user aktif dulu tanpa langsung hit cloud.
     loadFromDisk(syncCloud: false);
   }
 
@@ -21,7 +21,7 @@ class LogController {
   final ValueNotifier<List<Logbook>> filteredLogs = ValueNotifier([]);
   final ValueNotifier<bool> isLoading = ValueNotifier(false);
 
-  static const String _storageKey = 'user_logs_data';
+  String get _storageKey => 'user_logs_data_$_activeUsername';
   final MongoService _mongo = MongoService();
 
   List<Logbook> get logs => logsNotifier.value;
@@ -32,6 +32,8 @@ class LogController {
       'title': log.title,
       'description': log.description,
       'date': log.date.toIso8601String(),
+      'category': log.category,
+      'username': log.username,
     };
   }
 
@@ -51,6 +53,8 @@ class LogController {
       title: (map['title'] ?? '').toString(),
       description: (map['description'] ?? '').toString(),
       date: DateTime.tryParse((map['date'] ?? '').toString()) ?? DateTime.now(),
+      category: (map['category'] ?? 'Pribadi').toString(),
+      username: (map['username'] ?? _activeUsername).toString(),
     );
   }
 
@@ -76,7 +80,7 @@ class LogController {
       source: 'log_controller.dart',
     );
     try {
-      final dataFromCloud = await _mongo.getLogs();
+      final dataFromCloud = await _mongo.getLogs(_activeUsername);
       logsNotifier.value = dataFromCloud;
       filteredLogs.value = dataFromCloud;
       await saveToDisk();
@@ -141,6 +145,8 @@ class LogController {
       title: title,
       description: desc,
       date: DateTime.now(),
+      category: category,
+      username: _activeUsername,
     );
 
     try {
@@ -164,7 +170,12 @@ class LogController {
     }
   }
 
-  Future<void> updateLog(int index, String newTitle, String newDesc) async {
+  Future<void> updateLog(
+    int index,
+    String newTitle,
+    String newDesc,
+    String newCategory,
+  ) async {
     final currentLogs = List<Logbook>.from(logsNotifier.value);
     final oldLog = currentLogs[index];
 
@@ -173,6 +184,8 @@ class LogController {
       title: newTitle,
       description: newDesc,
       date: DateTime.now(),
+      category: newCategory,
+      username: oldLog.username,
     );
 
     try {
@@ -207,7 +220,7 @@ class LogController {
         throw Exception('ID Log tidak ditemukan, tidak bisa menghapus di Cloud.');
       }
 
-      await _mongo.deleteLog(targetLog.id!);
+      await _mongo.deleteLog(targetLog.id!, _activeUsername);
 
       currentLogs.removeAt(index);
       logsNotifier.value = currentLogs;
