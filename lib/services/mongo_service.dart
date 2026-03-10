@@ -94,23 +94,23 @@ class MongoService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchRawLogs(String authorId) async {
+  Future<List<Map<String, dynamic>>> _fetchRawLogs(String teamId) async {
     final collection = await _getSafeCollection();
-    return collection.find(where.eq('authorId', authorId)).toList();
+    return collection.find(where.eq('teamId', teamId)).toList();
   }
 
-  /// READ: Mengambil data dari Cloud.
-  Future<List<Logbook>> getLogs(String username) async {
+  /// READ: Mengambil data dari Cloud berdasarkan Team ID
+  Future<List<Logbook>> getLogs(String teamId) async {
     await LogHelper.writeLog(
-      'READ: Mulai fetch logs untuk user=$username',
+      'INFO: Fetching data for Team: $teamId',
       source: _source,
       level: 3,
     );
 
     try {
-      final data = await _fetchRawLogs(username);
+      final data = await _fetchRawLogs(teamId);
       await LogHelper.writeLog(
-        'READ: ${data.length} log berhasil diambil untuk user=$username.',
+        'READ: ${data.length} log berhasil diambil untuk team=$teamId.',
         source: _source,
         level: 2,
       );
@@ -126,9 +126,9 @@ class MongoService {
       await connect();
 
       try {
-        final data = await _fetchRawLogs(username);
+        final data = await _fetchRawLogs(teamId);
         await LogHelper.writeLog(
-          'READ: Reconnect berhasil, ${data.length} log diambil untuk user=$username.',
+          'READ: Reconnect berhasil, ${data.length} log diambil untuk team=$teamId.',
           source: _source,
           level: 2,
         );
@@ -139,7 +139,7 @@ class MongoService {
           source: _source,
           level: 1,
         );
-        rethrow;
+        return [];
       }
     }
   }
@@ -207,18 +207,18 @@ class MongoService {
   }
 
   /// DELETE: Menghapus dokumen berdasarkan ObjectId.
-  Future<void> deleteLog(ObjectId id, String username) async {
+  Future<void> deleteLog(ObjectId id, String authorId) async {
     try {
       final collection = await _getSafeCollection();
       await LogHelper.writeLog(
-        'DELETE: Menghapus log id=$id user=$username',
+        'DELETE: Menghapus log id=$id author=$authorId',
         source: _source,
         level: 3,
       );
-      await collection.remove(where.id(id).eq('username', username));
+      await collection.remove(where.id(id).eq('authorId', authorId));
 
       await LogHelper.writeLog(
-        'DELETE: Hapus ID $id berhasil untuk user=$username.',
+        'DELETE: Hapus ID $id berhasil untuk author=$authorId.',
         source: _source,
         level: 2,
       );

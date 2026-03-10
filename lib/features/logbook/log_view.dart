@@ -32,7 +32,7 @@ class _LogViewState extends State<LogView> {
   @override
   void initState() {
     super.initState();
-    _controller = LogController(username: _uid);
+    _controller = LogController(currentUser: widget.currentUser);
     Future.microtask(() => _initDatabase());
   }
 

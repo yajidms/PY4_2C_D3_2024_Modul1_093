@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
@@ -8,13 +9,16 @@ import '../../services/mongo_service.dart';
 import '../logbook/models/log_model.dart';
 
 class LogController {
-  final String _activeUserId;
-  late final Box<Logbook> _logBox;
+  final Map<String, String> currentUser;
+  late final Box<Logbook> _myBox;
 
-  LogController({required String username})
-      : _activeUserId = username.trim().toLowerCase() {
-    _logBox = Hive.box<Logbook>('offline_logs');
-    loadFromDisk(syncCloud: true);
+  /// Shorthand getter
+  String get _teamId => currentUser['teamId'] ?? '';
+
+  LogController({required this.currentUser}) {
+    _myBox = Hive.box<Logbook>('offline_logs');
+    loadLogs(_teamId);
+    _setupConnectivityListener();
   }
 
   final ValueNotifier<List<Logbook>> logsNotifier = ValueNotifier([]);
@@ -25,11 +29,11 @@ class LogController {
 
   List<Logbook> get logs => logsNotifier.value;
 
-  /// 1. LOAD DATA (Offline-First Strategy)
-  Future<void> loadFromDisk({bool syncCloud = true}) async {
-    // Ambil data dari Hive (Sangat Cepat/Instan)
-    final localData = _logBox.values
-        .where((log) => log.authorId == _activeUserId)
+  /// 1. LOAD DATA (Offline-First Strategy) — filter by teamId
+  Future<void> loadLogs(String teamId) async {
+    // Langkah 1: Ambil data dari Hive (Instan) — tampilkan dulu ke UI
+    final localData = _myBox.values
+        .where((log) => log.teamId == teamId)
         .toList();
 
     logsNotifier.value = localData;
@@ -41,41 +45,63 @@ class LogController {
       level: 3,
     );
 
-    // Sync dari Cloud (Background Process)
-    if (syncCloud) {
-      await fetchLogs();
-    }
-  }
-
-  /// Sinkronisasi Data dari MongoDB ke Lokal
-  Future<void> fetchLogs() async {
+    // Langkah 2: Sync dari Cloud (Background)
     isLoading.value = true;
     try {
-      final cloudData = await _mongo.getLogs(_activeUserId);
+      final cloudData = await _mongo.getLogs(teamId);
 
-      // Bersihkan data lokal milik user ini, lalu timpa dengan data terbaru dari Cloud
-      final keysToDelete = _logBox.keys
-          .where((k) => _logBox.get(k)?.authorId == _activeUserId)
+      // Cegah duplikasi: bersihkan cache lama tim ini, ganti dengan data Cloud
+      final keysToDelete = _myBox.keys
+          .where((k) => _myBox.get(k)?.teamId == teamId)
           .toList();
-      await _logBox.deleteAll(keysToDelete);
-      await _logBox.addAll(cloudData);
+      await _myBox.deleteAll(keysToDelete);
+      await _myBox.addAll(cloudData);
 
       logsNotifier.value = cloudData;
       filteredLogs.value = cloudData;
 
       await LogHelper.writeLog(
-        'SYNC: ${cloudData.length} log berhasil diperbarui dari Cloud ke Hive.',
+        'SYNC: ${cloudData.length} log berhasil diperbarui dari Atlas (team=$teamId).',
         source: 'log_controller.dart',
+        level: 2,
       );
     } catch (e) {
       await LogHelper.writeLog(
-        'OFFLINE: Gagal sinkronisasi dari Cloud, menggunakan data lokal. Error: $e',
+        'OFFLINE: Menggunakan data cache lokal. Error: $e',
         source: 'log_controller.dart',
-        level: 1,
+        level: 2,
       );
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Alias untuk kompatibilitas pemanggil lama di log_view.dart
+  Future<void> loadFromDisk({bool syncCloud = true}) => loadLogs(_teamId);
+
+  /// Alias refresh (dipanggil dari pull-to-refresh di UI)
+  Future<void> fetchLogs() => loadLogs(_teamId);
+
+  /// Mendengarkan perubahan status jaringan (Offline → Online)
+  void _setupConnectivityListener() {
+    Connectivity().onConnectivityChanged.listen(
+      (List<ConnectivityResult> results) async {
+        if (results.contains(ConnectivityResult.mobile) ||
+            results.contains(ConnectivityResult.wifi)) {
+          await LogHelper.writeLog(
+            'NETWORK: Koneksi pulih, mencoba sinkronisasi data pending...',
+            source: 'log_controller.dart',
+            level: 3,
+          );
+          await _syncPendingData();
+        }
+      },
+    );
+  }
+
+  /// Sinkronisasi otomatis saat koneksi kembali tersambung
+  Future<void> _syncPendingData() async {
+    await loadLogs(_teamId);
   }
 
   /// 2. ADD DATA (Instant Local + Background Cloud)
@@ -97,7 +123,7 @@ class LogController {
     );
 
     // ACTION 1: Simpan ke Hive dan Update UI (Instan)
-    await _logBox.add(newLog);
+    await _myBox.add(newLog);
     final currentLogs = List<Logbook>.from(logsNotifier.value)..add(newLog);
     logsNotifier.value = currentLogs;
     filteredLogs.value = currentLogs;
@@ -105,7 +131,10 @@ class LogController {
     // ACTION 2: Kirim ke MongoDB Atlas secara Asinkron (Background)
     try {
       await _mongo.insertLog(newLog);
-      await LogHelper.writeLog('SUCCESS: Data tersinkron ke Cloud', source: 'log_controller.dart');
+      await LogHelper.writeLog(
+        'SUCCESS: Data tersinkron ke Cloud',
+        source: 'log_controller.dart',
+      );
     } catch (e) {
       await LogHelper.writeLog(
         'WARNING: Data tersimpan di lokal (Hive), akan sinkron saat online.',
@@ -141,19 +170,19 @@ class LogController {
     filteredLogs.value = currentLogs;
 
     // Cari & Update di Hive lokal
-    final key = _logBox.keys.firstWhere(
-      (k) => _logBox.get(k)?.id == oldLog.id,
+    final key = _myBox.keys.firstWhere(
+      (k) => _myBox.get(k)?.id == oldLog.id,
       orElse: () => null,
     );
     if (key != null) {
-      await _logBox.put(key, updatedLog);
+      await _myBox.put(key, updatedLog);
     }
 
     // Sync ke Cloud
     try {
       await _mongo.updateLog(updatedLog);
       await LogHelper.writeLog(
-        "SUCCESS: Update disinkronkan ke Cloud",
+        'SUCCESS: Update disinkronkan ke Cloud',
         source: 'log_controller.dart',
         level: 2,
       );
@@ -192,12 +221,12 @@ class LogController {
     filteredLogs.value = currentLogs;
 
     // Hapus dari Hive
-    final key = _logBox.keys.firstWhere(
-      (k) => _logBox.get(k)?.id == targetLog.id,
+    final key = _myBox.keys.firstWhere(
+      (k) => _myBox.get(k)?.id == targetLog.id,
       orElse: () => null,
     );
     if (key != null) {
-      await _logBox.delete(key);
+      await _myBox.delete(key);
     }
 
     // Hapus dari Cloud
@@ -222,8 +251,12 @@ class LogController {
       filteredLogs.value = logsNotifier.value;
     } else {
       filteredLogs.value = logsNotifier.value
-          .where((log) => log.title.toLowerCase().contains(query.toLowerCase()))
+          .where(
+            (log) => log.title.toLowerCase().contains(query.toLowerCase()),
+          )
           .toList();
     }
   }
 }
+
+
