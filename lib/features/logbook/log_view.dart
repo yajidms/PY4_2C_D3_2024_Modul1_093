@@ -5,14 +5,16 @@ import 'models/log_model.dart';
 import 'widgets/log_item_widget.dart';
 import '../../services/mongo_service.dart';
 import '../../helpers/log_helper.dart';
+import '../../services/access_control_service.dart';
+import 'log_editor_page.dart';
 
 const Color _kBgColor = Color(0xFFF7F5DE);
 const Color _kAccentBlue = Color(0xFF3D8BE8);
 const Color _kAppBarText = Color(0xFF2D3E50);
 
 class LogView extends StatefulWidget {
-  final String username;
-  const LogView({super.key, required this.username});
+  final Map<String, String> currentUser;
+  const LogView({super.key, required this.currentUser});
 
   @override
   State<LogView> createState() => _LogViewState();
@@ -20,15 +22,17 @@ class LogView extends StatefulWidget {
 
 class _LogViewState extends State<LogView> {
   late LogController _controller;
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _contentController = TextEditingController();
 
   bool _isLoading = false;
+
+  // Shorthand getters untuk data user yang sering dipakai
+  String get _uid => widget.currentUser['uid'] ?? '';
+  String get _role => widget.currentUser['role'] ?? 'Anggota';
 
   @override
   void initState() {
     super.initState();
-    _controller = LogController(username: widget.username);
+    _controller = LogController(username: _uid);
     Future.microtask(() => _initDatabase());
   }
 
@@ -37,12 +41,6 @@ class _LogViewState extends State<LogView> {
     try {
       await LogHelper.writeLog(
         "UI: Memulai inisialisasi database...",
-        source: "log_view.dart",
-      );
-
-      //koneksi ke MongoDB Atlas (Cloud)
-      await LogHelper.writeLog(
-        "UI: Menghubungi MongoService.connect()...",
         source: "log_view.dart",
       );
 
@@ -55,12 +53,6 @@ class _LogViewState extends State<LogView> {
 
       await LogHelper.writeLog(
         "UI: Koneksi MongoService BERHASIL.",
-        source: "log_view.dart",
-      );
-
-      // Mengambil data log dari Cloud
-      await LogHelper.writeLog(
-        "UI: Memanggil controller.loadFromDisk()...",
         source: "log_view.dart",
       );
 
@@ -88,14 +80,12 @@ class _LogViewState extends State<LogView> {
         );
       }
     } finally {
-      // Apapun yang terjadi (Sukses/Gagal/Data Kosong), loading harus mati
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
   }
 
-  // Fungsi untuk Pull-to-Refresh dengan Connection Guard
   Future<void> _refreshData() async {
     try {
       await _controller.fetchLogs();
@@ -123,120 +113,19 @@ class _LogViewState extends State<LogView> {
     }
   }
 
-  //bagian untuk menampilkan dialog tambah/edit log
-  void _showLogDialog(BuildContext context, {int? index, Logbook? log}) {
-    _titleController.text = log?.title ?? '';
-    _contentController.text = log?.description ?? '';
-
-    final categoryNotifier = ValueNotifier<String>(log?.category ?? 'Pribadi');
-    const categories = ['Pribadi', 'Pekerjaan', 'Kuliah', 'Urgent'];
-
-    final inputDecoration = InputDecoration(
-      filled: true,
-      fillColor: Colors.grey.shade50,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+  /// Navigasi ke halaman editor penuh (add / edit)
+  void _goToEditor({Logbook? log, int? index}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LogEditorPage(
+          log: log,
+          index: index,
+          controller: _controller,
+          currentUser: widget.currentUser,
+        ),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          log == null ? "Catatan Baru" : "Edit Catatan",
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: inputDecoration.copyWith(
-                hintText: "Judul (misal: Oguri Cap)",
-              ),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _contentController,
-              decoration: inputDecoration.copyWith(
-                hintText: "Detail deskripsi...",
-              ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-            ValueListenableBuilder<String>(
-              valueListenable: categoryNotifier,
-              builder: (context, value, child) {
-                return DropdownButtonFormField<String>(
-                  initialValue: value,
-                  decoration: inputDecoration,
-                  isExpanded: true,
-                  items: categories
-                      .map(
-                        (cat) => DropdownMenuItem<String>(
-                          value: cat,
-                          child: Text(cat),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      categoryNotifier.value = val;
-                    }
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-        actionsPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Batal", style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _kAccentBlue,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            onPressed: () {
-              if (_titleController.text.isNotEmpty) {
-                if (log == null) {
-                  _controller.addLog(
-                    _titleController.text,
-                    _contentController.text,
-                    categoryNotifier.value,
-                  );
-                } else {
-                  _controller.updateLog(
-                    index!,
-                    _titleController.text,
-                    _contentController.text,
-                    categoryNotifier.value,
-                  );
-                }
-                _titleController.clear();
-                _contentController.clear();
-                Navigator.pop(context);
-              }
-            },
-            child: Text(log == null ? "Simpan" : "Update"),
-          ),
-        ],
-      ),
-    ).then((_) => categoryNotifier.dispose());
   }
 
   @override
@@ -251,7 +140,7 @@ class _LogViewState extends State<LogView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Halo, ${widget.username}",
+              "Halo, $_uid  ·  $_role",
               style: const TextStyle(
                 color: _kAccentBlue,
                 fontSize: 14,
@@ -277,7 +166,6 @@ class _LogViewState extends State<LogView> {
       ),
       body: Column(
         children: [
-          //search bar dengan padding
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
@@ -333,10 +221,14 @@ class _LogViewState extends State<LogView> {
                                     const SizedBox(height: 16),
                                     const Text("Belum ada catatan di Cloud."),
                                     const SizedBox(height: 12),
-                                    ElevatedButton(
-                                      onPressed: () => _showLogDialog(context),
-                                      child: const Text("Buat Catatan Pertama"),
-                                    ),
+                                    if (AccessControlService.canPerform(
+                                      _role,
+                                      AccessControlService.actionCreate,
+                                    ))
+                                      ElevatedButton(
+                                        onPressed: () => _goToEditor(),
+                                        child: const Text("Buat Catatan Pertama"),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -349,11 +241,26 @@ class _LogViewState extends State<LogView> {
                           itemCount: currentLogs.length,
                           itemBuilder: (context, index) {
                             final log = currentLogs[index];
+
+                            // Cek apakah user yang login adalah pembuat catatan ini
+                            final bool isOwner = log.authorId == _uid;
+
+                            final bool canEdit = AccessControlService.canPerform(
+                              _role,
+                              AccessControlService.actionUpdate,
+                              isOwner: isOwner,
+                            );
+                            final bool canDelete = AccessControlService.canPerform(
+                              _role,
+                              AccessControlService.actionDelete,
+                              isOwner: isOwner,
+                            );
+
                             return Dismissible(
-                              key: Key(
-                                log.id ?? log.date.toIso8601String(),
-                              ),
-                              direction: DismissDirection.endToStart,
+                              key: Key(log.id ?? log.date.toIso8601String()),
+                              direction: canDelete
+                                  ? DismissDirection.endToStart
+                                  : DismissDirection.none,
                               background: Container(
                                 color: Colors.red,
                                 alignment: Alignment.centerRight,
@@ -365,11 +272,7 @@ class _LogViewState extends State<LogView> {
                                 child: const Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
-                                      Icons.delete,
-                                      color: Colors.white,
-                                      size: 28,
-                                    ),
+                                    Icon(Icons.delete, color: Colors.white, size: 28),
                                     SizedBox(height: 4),
                                     Text(
                                       "Hapus",
@@ -382,79 +285,69 @@ class _LogViewState extends State<LogView> {
                                   ],
                                 ),
                               ),
-                              onDismissed: (direction) {
-                                final deletedTitle = log.title;
-                                _controller.removeLog(index);
-                                ScaffoldMessenger.of(context).clearSnackBars();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.delete_outline,
-                                          color: Colors.white,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            'Catatan "$deletedTitle" telah dihapus',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                            ),
+                              onDismissed: canDelete
+                                  ? (direction) {
+                                      final deletedTitle = log.title;
+                                      _controller.removeLog(index, _role, _uid);
+                                      ScaffoldMessenger.of(context).clearSnackBars();
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Row(
+                                            children: [
+                                              const Icon(Icons.delete_outline, color: Colors.white),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Text(
+                                                  'Catatan "$deletedTitle" telah dihapus',
+                                                  style: const TextStyle(color: Colors.white),
+                                                ),
+                                              ),
+                                            ],
                                           ),
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          margin: const EdgeInsets.all(16),
+                                          duration: const Duration(seconds: 3),
                                         ),
-                                      ],
-                                    ),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    margin: const EdgeInsets.all(16),
-                                    duration: const Duration(seconds: 3),
-                                  ),
-                                );
-                              },
+                                      );
+                                    }
+                                  : null,
                               child: LogItemWidget(
                                 log: log,
-                                onEditPressed: () => _showLogDialog(
-                                  context,
-                                  index: index,
-                                  log: log,
-                                ),
-                                onDeletePressed: () {
-                                  final deletedTitle = log.title;
-                                  _controller.removeLog(index);
-                                  ScaffoldMessenger.of(
-                                    context,
-                                  ).clearSnackBars();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.delete_outline,
-                                            color: Colors.white,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Text(
-                                              'Catatan "$deletedTitle" telah dihapus',
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                              ),
+                                onEditPressed: canEdit
+                                    ? () => _goToEditor(log: log, index: index)
+                                    : () {},
+                                onDeletePressed: canDelete
+                                    ? () {
+                                        final deletedTitle = log.title;
+                                        _controller.removeLog(index, _role, _uid);
+                                        ScaffoldMessenger.of(context).clearSnackBars();
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Row(
+                                              children: [
+                                                const Icon(Icons.delete_outline, color: Colors.white),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Text(
+                                                    'Catatan "$deletedTitle" telah dihapus',
+                                                    style: const TextStyle(color: Colors.white),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            margin: const EdgeInsets.all(16),
+                                            duration: const Duration(seconds: 3),
                                           ),
-                                        ],
-                                      ),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      margin: const EdgeInsets.all(16),
-                                      duration: const Duration(seconds: 3),
-                                    ),
-                                  );
-                                },
+                                        );
+                                      }
+                                    : () {},
                               ),
                             );
                           },
@@ -465,16 +358,21 @@ class _LogViewState extends State<LogView> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showLogDialog(context),
-        backgroundColor: _kAccentBlue, // Tombol tambah warna biru
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          "Catatan Baru",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
+      floatingActionButton: AccessControlService.canPerform(
+        _role,
+        AccessControlService.actionCreate,
+      )
+          ? FloatingActionButton.extended(
+              onPressed: () => _goToEditor(),
+              backgroundColor: _kAccentBlue,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                "Catatan Baru",
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            )
+          : null,
     );
   }
 
@@ -483,9 +381,7 @@ class _LogViewState extends State<LogView> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text("Konfirmasi Logout"),
           content: const Text("Apakah Anda yakin ingin keluar?"),
           actions: [

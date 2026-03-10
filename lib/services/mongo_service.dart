@@ -94,9 +94,9 @@ class MongoService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchRawLogs(String username) async {
+  Future<List<Map<String, dynamic>>> _fetchRawLogs(String authorId) async {
     final collection = await _getSafeCollection();
-    return collection.find(where.eq('username', username)).toList();
+    return collection.find(where.eq('authorId', authorId)).toList();
   }
 
   /// READ: Mengambil data dari Cloud.
@@ -149,7 +149,7 @@ class MongoService {
     try {
       final collection = await _getSafeCollection();
       await LogHelper.writeLog(
-        "CREATE: Menyimpan log '${log.title}' untuk user=${log.username}",
+        "CREATE: Menyimpan log '${log.title}' untuk user=${log.authorId}",
         source: _source,
         level: 3,
       );
@@ -182,12 +182,12 @@ class MongoService {
       final objectId = ObjectId.fromHexString(log.id!);
 
       await LogHelper.writeLog(
-        "UPDATE: Memperbarui log id=${log.id} user=${log.username}",
+        "UPDATE: Memperbarui log id=${log.id} user=${log.authorId}",
         source: _source,
         level: 3,
       );
       await collection.replaceOne(
-        where.id(objectId).eq('username', log.username),
+        where.id(objectId).eq('authorId', log.authorId),
         log.toMap(),
       );
 

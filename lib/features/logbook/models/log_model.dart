@@ -6,7 +6,7 @@ part 'log_model.g.dart';
 @HiveType(typeId: 0)
 class Logbook {
   @HiveField(0)
-  final String? id; // Diubah dari ObjectId? menjadi String? untuk Hive
+  final String? id;
 
   @HiveField(1)
   final String title;
@@ -21,7 +21,10 @@ class Logbook {
   final String category;
 
   @HiveField(5)
-  final String username;
+  final String authorId;
+
+  @HiveField(6)
+  final String teamId;
 
   Logbook({
     this.id,
@@ -29,7 +32,8 @@ class Logbook {
     required this.description,
     required this.date,
     required this.category,
-    required this.username,
+    required this.authorId,
+    required this.teamId,
   });
 
   Map<String, dynamic> toMap() {
@@ -39,7 +43,8 @@ class Logbook {
       'description': description,
       'date': date.toIso8601String(),
       'category': category,
-      'username': username,
+      'authorId': authorId,
+      'teamId': teamId,
     };
   }
 
@@ -52,7 +57,8 @@ class Logbook {
           ? (map['date'] is String ? DateTime.parse(map['date']) : map['date'])
           : DateTime.now(),
       category: (map['category'] ?? 'Pribadi').toString(),
-      username: (map['username'] ?? '').toString(),
+      authorId: (map['authorId'] ?? 'unknown_user').toString(),
+      teamId: (map['teamId'] ?? 'no_team').toString(),
     );
   }
 }

@@ -3,16 +3,16 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 
 import '../../helpers/log_helper.dart';
+import '../../services/access_control_service.dart';
 import '../../services/mongo_service.dart';
 import '../logbook/models/log_model.dart';
 
 class LogController {
-  final String _activeUsername;
+  final String _activeUserId;
   late final Box<Logbook> _logBox;
 
   LogController({required String username})
-      : _activeUsername = username.trim().toLowerCase() {
-    // Membuka kotak Hive yang sudah diinisialisasi di main.dart
+      : _activeUserId = username.trim().toLowerCase() {
     _logBox = Hive.box<Logbook>('offline_logs');
     loadFromDisk(syncCloud: true);
   }
@@ -29,7 +29,7 @@ class LogController {
   Future<void> loadFromDisk({bool syncCloud = true}) async {
     // Ambil data dari Hive (Sangat Cepat/Instan)
     final localData = _logBox.values
-        .where((log) => log.username == _activeUsername)
+        .where((log) => log.authorId == _activeUserId)
         .toList();
 
     logsNotifier.value = localData;
@@ -51,11 +51,11 @@ class LogController {
   Future<void> fetchLogs() async {
     isLoading.value = true;
     try {
-      final cloudData = await _mongo.getLogs(_activeUsername);
+      final cloudData = await _mongo.getLogs(_activeUserId);
 
       // Bersihkan data lokal milik user ini, lalu timpa dengan data terbaru dari Cloud
       final keysToDelete = _logBox.keys
-          .where((k) => _logBox.get(k)?.username == _activeUsername)
+          .where((k) => _logBox.get(k)?.authorId == _activeUserId)
           .toList();
       await _logBox.deleteAll(keysToDelete);
       await _logBox.addAll(cloudData);
@@ -79,14 +79,21 @@ class LogController {
   }
 
   /// 2. ADD DATA (Instant Local + Background Cloud)
-  Future<void> addLog(String title, String desc, String category) async {
+  Future<void> addLog(
+    String title,
+    String desc,
+    String category,
+    String authorId,
+    String teamId,
+  ) async {
     final newLog = Logbook(
-      id: ObjectId().oid, // Disimpan sebagai String di Hive
+      id: ObjectId().oid,
       title: title,
       description: desc,
       date: DateTime.now(),
       category: category,
-      username: _activeUsername,
+      authorId: authorId,
+      teamId: teamId,
     );
 
     // ACTION 1: Simpan ke Hive dan Update UI (Instan)
@@ -100,12 +107,21 @@ class LogController {
       await _mongo.insertLog(newLog);
       await LogHelper.writeLog('SUCCESS: Data tersinkron ke Cloud', source: 'log_controller.dart');
     } catch (e) {
-      await LogHelper.writeLog('WARNING: Data tersimpan di lokal (Hive), akan sinkron saat online.', source: 'log_controller.dart', level: 1);
+      await LogHelper.writeLog(
+        'WARNING: Data tersimpan di lokal (Hive), akan sinkron saat online.',
+        source: 'log_controller.dart',
+        level: 1,
+      );
     }
   }
 
   /// 3. UPDATE DATA
-  Future<void> updateLog(int index, String newTitle, String newDesc, String newCategory) async {
+  Future<void> updateLog(
+    int index,
+    String newTitle,
+    String newDesc,
+    String newCategory,
+  ) async {
     final currentLogs = List<Logbook>.from(logsNotifier.value);
     final oldLog = currentLogs[index];
 
@@ -115,7 +131,8 @@ class LogController {
       description: newDesc,
       date: DateTime.now(),
       category: newCategory,
-      username: oldLog.username,
+      authorId: oldLog.authorId,
+      teamId: oldLog.teamId,
     );
 
     // Update UI
@@ -135,16 +152,39 @@ class LogController {
     // Sync ke Cloud
     try {
       await _mongo.updateLog(updatedLog);
-      await LogHelper.writeLog("SUCCESS: Update disinkronkan ke Cloud", source: 'log_controller.dart', level: 2);
+      await LogHelper.writeLog(
+        "SUCCESS: Update disinkronkan ke Cloud",
+        source: 'log_controller.dart',
+        level: 2,
+      );
     } catch (e) {
-      await LogHelper.writeLog('ERROR: Gagal sinkronisasi Update (tersimpan lokal) - $e', source: 'log_controller.dart', level: 1);
+      await LogHelper.writeLog(
+        'ERROR: Gagal sinkronisasi Update (tersimpan lokal) - $e',
+        source: 'log_controller.dart',
+        level: 1,
+      );
     }
   }
 
-  /// 4. DELETE DATA
-  Future<void> removeLog(int index) async {
+  /// 4. DELETE DATA dengan RBAC security check
+  Future<void> removeLog(int index, String userRole, String userId) async {
     final currentLogs = List<Logbook>.from(logsNotifier.value);
     final targetLog = currentLogs[index];
+
+    // Lapisan Keamanan Tambahan
+    final isOwner = targetLog.authorId == userId;
+    if (!AccessControlService.canPerform(
+      userRole,
+      AccessControlService.actionDelete,
+      isOwner: isOwner,
+    )) {
+      await LogHelper.writeLog(
+        'SECURITY BREACH: Unauthorized delete attempt by $userId (role: $userRole)',
+        source: 'log_controller.dart',
+        level: 1,
+      );
+      return; // Hentikan eksekusi
+    }
 
     // Hapus dari UI
     currentLogs.removeAt(index);
@@ -163,10 +203,17 @@ class LogController {
     // Hapus dari Cloud
     try {
       if (targetLog.id != null) {
-        await _mongo.deleteLog(ObjectId.fromHexString(targetLog.id!), _activeUsername);
+        await _mongo.deleteLog(
+          ObjectId.fromHexString(targetLog.id!),
+          targetLog.authorId,
+        );
       }
     } catch (e) {
-      await LogHelper.writeLog('ERROR: Gagal hapus di Cloud (sudah terhapus di lokal) - $e', source: 'log_controller.dart', level: 1);
+      await LogHelper.writeLog(
+        'ERROR: Gagal hapus di Cloud (sudah terhapus di lokal) - $e',
+        source: 'log_controller.dart',
+        level: 1,
+      );
     }
   }
 
