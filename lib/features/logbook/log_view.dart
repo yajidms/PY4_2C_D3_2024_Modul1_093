@@ -351,7 +351,7 @@ class _LogViewState extends State<LogView> {
                             final log = currentLogs[index];
                             return Dismissible(
                               key: Key(
-                                log.id?.oid ?? log.date.toIso8601String(),
+                                log.id ?? log.date.toIso8601String(),
                               ),
                               direction: DismissDirection.endToStart,
                               background: Container(

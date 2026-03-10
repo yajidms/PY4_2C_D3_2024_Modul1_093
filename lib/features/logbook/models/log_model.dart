@@ -1,11 +1,26 @@
-import 'package:mongo_dart/mongo_dart.dart';
+import 'package:hive/hive.dart';
+import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 
+part 'log_model.g.dart';
+
+@HiveType(typeId: 0)
 class Logbook {
-  final ObjectId? id;
+  @HiveField(0)
+  final String? id; // Diubah dari ObjectId? menjadi String? untuk Hive
+
+  @HiveField(1)
   final String title;
+
+  @HiveField(2)
   final String description;
+
+  @HiveField(3)
   final DateTime date;
+
+  @HiveField(4)
   final String category;
+
+  @HiveField(5)
   final String username;
 
   Logbook({
@@ -19,7 +34,7 @@ class Logbook {
 
   Map<String, dynamic> toMap() {
     return {
-      '_id': id ?? ObjectId(),
+      '_id': id != null ? ObjectId.fromHexString(id!) : ObjectId(),
       'title': title,
       'description': description,
       'date': date.toIso8601String(),
@@ -30,10 +45,12 @@ class Logbook {
 
   factory Logbook.fromMap(Map<String, dynamic> map) {
     return Logbook(
-      id: map['_id'] as ObjectId?,
+      id: (map['_id'] as ObjectId?)?.oid ?? (map['_id'] is String ? map['_id'] : null),
       title: map['title'] ?? '',
       description: map['description'] ?? '',
-      date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
+      date: map['date'] != null
+          ? (map['date'] is String ? DateTime.parse(map['date']) : map['date'])
+          : DateTime.now(),
       category: (map['category'] ?? 'Pribadi').toString(),
       username: (map['username'] ?? '').toString(),
     );

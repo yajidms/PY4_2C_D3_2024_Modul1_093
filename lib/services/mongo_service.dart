@@ -178,13 +178,16 @@ class MongoService {
         throw Exception('ID Log tidak ditemukan untuk update');
       }
 
+      // id sekarang bertipe String, konversi ke ObjectId untuk query MongoDB
+      final objectId = ObjectId.fromHexString(log.id!);
+
       await LogHelper.writeLog(
         "UPDATE: Memperbarui log id=${log.id} user=${log.username}",
         source: _source,
         level: 3,
       );
       await collection.replaceOne(
-        where.id(log.id!).eq('username', log.username),
+        where.id(objectId).eq('username', log.username),
         log.toMap(),
       );
 

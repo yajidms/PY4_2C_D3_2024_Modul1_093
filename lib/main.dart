@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'features/logbook/models/log_model.dart';
 import 'features/onboarding/onboarding_view.dart';
 
 void main() async {
@@ -12,6 +14,11 @@ void main() async {
 
   // Inisialisasi format tanggal untuk locale Indonesia
   await initializeDateFormatting('id_ID', null);
+
+  // --- INISIALISASI HIVE ---
+  await Hive.initFlutter();
+  Hive.registerAdapter(LogbookAdapter()); // Mendaftarkan adapter yang baru saja digenerate
+  await Hive.openBox<Logbook>('offline_logs'); // Membuka kotak penyimpanan
 
   runApp(const MyApp());
 }
