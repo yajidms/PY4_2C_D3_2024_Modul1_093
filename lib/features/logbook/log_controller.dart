@@ -111,6 +111,7 @@ class LogController {
     String category,
     String authorId,
     String teamId,
+    bool isPublic,
   ) async {
     final newLog = Logbook(
       id: ObjectId().oid,
@@ -120,6 +121,7 @@ class LogController {
       category: category,
       authorId: authorId,
       teamId: teamId,
+      isPublic: isPublic,
     );
 
     // ACTION 1: Simpan ke Hive dan Update UI (Instan)
@@ -150,6 +152,7 @@ class LogController {
     String newTitle,
     String newDesc,
     String newCategory,
+    bool isPublic,
   ) async {
     final currentLogs = List<Logbook>.from(logsNotifier.value);
     final oldLog = currentLogs[index];
@@ -162,6 +165,7 @@ class LogController {
       category: newCategory,
       authorId: oldLog.authorId,
       teamId: oldLog.teamId,
+      isPublic: isPublic,
     );
 
     // Update UI

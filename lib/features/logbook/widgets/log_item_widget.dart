@@ -149,6 +149,42 @@ class LogItemWidget extends StatelessWidget {
                               ],
                             ),
                           ),
+                          // PRIVACY INDICATOR CHIP
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: log.isPublic
+                                  ? Colors.green.shade50
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  log.isPublic ? Icons.public : Icons.lock,
+                                  size: 13,
+                                  color: log.isPublic
+                                      ? Colors.green.shade700
+                                      : Colors.grey.shade600,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  log.isPublic ? 'Publik' : 'Privat',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: log.isPublic
+                                        ? Colors.green.shade700
+                                        : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,

@@ -26,6 +26,9 @@ class Logbook {
   @HiveField(6)
   final String teamId;
 
+  @HiveField(7)
+  final bool isPublic;
+
   Logbook({
     this.id,
     required this.title,
@@ -34,6 +37,7 @@ class Logbook {
     required this.category,
     required this.authorId,
     required this.teamId,
+    this.isPublic = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -45,6 +49,7 @@ class Logbook {
       'category': category,
       'authorId': authorId,
       'teamId': teamId,
+      'isPublic': isPublic,
     };
   }
 
@@ -59,6 +64,7 @@ class Logbook {
       category: (map['category'] ?? 'Pribadi').toString(),
       authorId: (map['authorId'] ?? 'unknown_user').toString(),
       teamId: (map['teamId'] ?? 'no_team').toString(),
+      isPublic: map['isPublic'] ?? false,
     );
   }
 }

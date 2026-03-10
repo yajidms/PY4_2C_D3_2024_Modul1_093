@@ -18,16 +18,13 @@ class AccessControlService {
   };
 
   static bool canPerform(String role, String action, {bool isOwner = false}) {
-    final permissions = _rolePermissions[role] ?? [];
-    bool hasBasicPermission = permissions.contains(action);
-
-    // Logic khusus kepemilikan data (Owner-based RBAC)
-    // Anggota hanya bisa Update/Delete jika dia adalah pembuat/pemilik asli catatan tersebut
-    if (role == 'Anggota' && (action == actionUpdate || action == actionDelete)) {
+    if (action == actionUpdate || action == actionDelete) {
       return isOwner;
     }
 
-    return hasBasicPermission;
+    // Untuk fungsi standar (Create, Read), gunakan Role
+    final permissions = _rolePermissions[role] ?? [];
+    return permissions.contains(action);
   }
 }
 

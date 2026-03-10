@@ -202,8 +202,15 @@ class _LogViewState extends State<LogView> {
                 return RefreshIndicator(
                   color: _kAccentBlue,
                   onRefresh: _refreshData,
-                  child: currentLogs.isEmpty
-                      ? ListView(
+                  child: Builder(
+                    builder: (context) {
+                      // Tampilkan jika (Saya adalah Owner) ATAU (Catatan tersebut Publik)
+                      final displayLogs = currentLogs.where((log) {
+                        return log.authorId == _uid || log.isPublic == true;
+                      }).toList();
+
+                      if (displayLogs.isEmpty) {
+                        return ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.symmetric(vertical: 24),
                           children: [
@@ -213,11 +220,7 @@ class _LogViewState extends State<LogView> {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
-                                      Icons.cloud_off,
-                                      size: 64,
-                                      color: Colors.grey,
-                                    ),
+                                    const Icon(Icons.cloud_off, size: 64, color: Colors.grey),
                                     const SizedBox(height: 16),
                                     const Text("Belum ada catatan di Cloud."),
                                     const SizedBox(height: 12),
@@ -234,13 +237,15 @@ class _LogViewState extends State<LogView> {
                               ),
                             ),
                           ],
-                        )
-                      : ListView.builder(
+                        );
+                      }
+
+                      return ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          itemCount: currentLogs.length,
+                          itemCount: displayLogs.length,
                           itemBuilder: (context, index) {
-                            final log = currentLogs[index];
+                            final log = displayLogs[index];
 
                             // Cek apakah user yang login adalah pembuat catatan ini
                             final bool isOwner = log.authorId == _uid;
@@ -255,6 +260,10 @@ class _LogViewState extends State<LogView> {
                               AccessControlService.actionDelete,
                               isOwner: isOwner,
                             );
+
+                            // Cari index asli di logsNotifier untuk removeLog/updateLog
+                            final int realIndex = _controller.logs
+                                .indexWhere((l) => l.id == log.id);
 
                             return Dismissible(
                               key: Key(log.id ?? log.date.toIso8601String()),
@@ -288,7 +297,9 @@ class _LogViewState extends State<LogView> {
                               onDismissed: canDelete
                                   ? (direction) {
                                       final deletedTitle = log.title;
-                                      _controller.removeLog(index, _role, _uid);
+                                      if (realIndex != -1) {
+                                        _controller.removeLog(realIndex, _role, _uid);
+                                      }
                                       ScaffoldMessenger.of(context).clearSnackBars();
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
@@ -316,13 +327,13 @@ class _LogViewState extends State<LogView> {
                                   : null,
                               child: LogItemWidget(
                                 log: log,
-                                onEditPressed: canEdit
-                                    ? () => _goToEditor(log: log, index: index)
+                                onEditPressed: canEdit && realIndex != -1
+                                    ? () => _goToEditor(log: log, index: realIndex)
                                     : () {},
-                                onDeletePressed: canDelete
+                                onDeletePressed: canDelete && realIndex != -1
                                     ? () {
                                         final deletedTitle = log.title;
-                                        _controller.removeLog(index, _role, _uid);
+                                        _controller.removeLog(realIndex, _role, _uid);
                                         ScaffoldMessenger.of(context).clearSnackBars();
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
@@ -351,7 +362,9 @@ class _LogViewState extends State<LogView> {
                               ),
                             );
                           },
-                        ),
+                        );
+                    },
+                  ),
                 );
               },
             ),

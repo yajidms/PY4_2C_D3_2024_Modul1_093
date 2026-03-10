@@ -25,6 +25,7 @@ class _LogEditorPageState extends State<LogEditorPage> {
   late TextEditingController _titleController;
   late TextEditingController _descController;
   late TextEditingController _categoryController;
+  bool _isPublic = false; // Privacy toggle state
 
   @override
   void initState() {
@@ -32,6 +33,7 @@ class _LogEditorPageState extends State<LogEditorPage> {
     _titleController = TextEditingController(text: widget.log?.title ?? '');
     _descController = TextEditingController(text: widget.log?.description ?? '');
     _categoryController = TextEditingController(text: widget.log?.category ?? 'Software');
+    _isPublic = widget.log?.isPublic ?? false; // Nilai awal dari log yang ada
 
     // Listener agar Tab Pratinjau Markdown terupdate otomatis saat kita mengetik
     _descController.addListener(() {
@@ -51,6 +53,7 @@ class _LogEditorPageState extends State<LogEditorPage> {
         _categoryController.text,
         widget.currentUser['uid']!,    // authorId
         widget.currentUser['teamId']!, // teamId
+        _isPublic,
       );
     } else {
       // Update data log yang ada
@@ -59,6 +62,7 @@ class _LogEditorPageState extends State<LogEditorPage> {
         title,
         _descController.text,
         _categoryController.text,
+        _isPublic,
       );
     }
     Navigator.pop(context); // Kembali ke list setelah simpan
@@ -108,6 +112,22 @@ class _LogEditorPageState extends State<LogEditorPage> {
                   TextField(
                     controller: _categoryController,
                     decoration: const InputDecoration(labelText: "Kategori"),
+                  ),
+                  const SizedBox(height: 10),
+                  // PRIVACY TOGGLE
+                  SwitchListTile(
+                    title: const Text("Buat Publik"),
+                    subtitle: Text(
+                      _isPublic
+                          ? "Dapat dilihat oleh rekan satu tim."
+                          : "Hanya Anda yang dapat melihat catatan ini.",
+                    ),
+                    value: _isPublic,
+                    onChanged: (bool value) {
+                      setState(() {
+                        _isPublic = value;
+                      });
+                    },
                   ),
                   const SizedBox(height: 10),
                   Expanded(
