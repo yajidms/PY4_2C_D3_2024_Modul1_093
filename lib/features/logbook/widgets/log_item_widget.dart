@@ -12,12 +12,16 @@ class LogItemWidget extends StatelessWidget {
   final Logbook log;
   final VoidCallback onEditPressed;
   final VoidCallback onDeletePressed;
+  final bool canEdit;
+  final bool canDelete;
 
   const LogItemWidget({
     super.key,
     required this.log,
     required this.onEditPressed,
     required this.onDeletePressed,
+    this.canEdit = true,
+    this.canDelete = true,
   });
 
   IconData _getCategoryIcon(String category) {
@@ -126,24 +130,32 @@ class LogItemWidget extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
+                              color: log.isSynced
+                                  ? Colors.blue.shade50
+                                  : Colors.orange.shade50,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  Icons.cloud_done_outlined,
+                                  log.isSynced
+                                      ? Icons.cloud_done_outlined
+                                      : Icons.cloud_upload_outlined,
                                   size: 13,
-                                  color: Colors.blue,
+                                  color: log.isSynced
+                                      ? Colors.blue
+                                      : Colors.orange.shade700,
                                 ),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'Cloud',
+                                  log.isSynced ? 'Cloud' : 'Pending',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.blue,
+                                    color: log.isSynced
+                                        ? Colors.blue
+                                        : Colors.orange.shade700,
                                   ),
                                 ),
                               ],
@@ -240,18 +252,20 @@ class LogItemWidget extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton(
-                      onPressed: onEditPressed,
-                      icon: const Icon(Icons.edit_outlined),
-                      color: _kAccentBlue,
-                      tooltip: "Edit",
-                    ),
-                    IconButton(
-                      onPressed: onDeletePressed,
-                      icon: const Icon(Icons.delete_outline),
-                      color: Colors.redAccent.shade200,
-                      tooltip: "Hapus",
-                    ),
+                    if (canEdit)
+                      IconButton(
+                        onPressed: onEditPressed,
+                        icon: const Icon(Icons.edit_outlined),
+                        color: _kAccentBlue,
+                        tooltip: "Edit",
+                      ),
+                    if (canDelete)
+                      IconButton(
+                        onPressed: onDeletePressed,
+                        icon: const Icon(Icons.delete_outline),
+                        color: Colors.redAccent.shade200,
+                        tooltip: "Hapus",
+                      ),
                   ],
                 ),
               ),

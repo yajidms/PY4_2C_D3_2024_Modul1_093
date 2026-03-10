@@ -12,17 +12,20 @@ class AccessControlService {
 
   // Matrix perizinan (Role-Based Access Control)
   static final Map<String, List<String>> _rolePermissions = {
-    'Ketua': [actionCreate, actionRead, actionUpdate, actionDelete],
-    'Anggota': [actionCreate, actionRead],
-    'Asisten': [actionRead, actionUpdate],
+    'Pemilik Catatan': [actionCreate, actionRead, actionUpdate, actionDelete],
+    'Ketua Tim':       [actionRead],
+    'Anggota':         [actionRead],
   };
 
   static bool canPerform(String role, String action, {bool isOwner = false}) {
-    if (action == actionUpdate || action == actionDelete) {
+    if (role == 'Pemilik Catatan') {
+      // Create & Read bebas tanpa syarat isOwner
+      if (action == actionCreate || action == actionRead) return true;
+      // Update & Delete hanya jika pemilik data
       return isOwner;
     }
 
-    // Untuk fungsi standar (Create, Read), gunakan Role
+    // Ketua Tim & Anggota: hanya Read, tidak ada syarat isOwner
     final permissions = _rolePermissions[role] ?? [];
     return permissions.contains(action);
   }

@@ -29,6 +29,12 @@ class Logbook {
   @HiveField(7)
   final bool isPublic;
 
+  @HiveField(8)
+  final bool isSynced; // false = belum tersinkron ke Cloud
+
+  @HiveField(9)
+  final bool isDeleted; // true = soft-delete, menunggu hapus di Cloud
+
   Logbook({
     this.id,
     required this.title,
@@ -38,7 +44,35 @@ class Logbook {
     required this.authorId,
     required this.teamId,
     this.isPublic = false,
+    this.isSynced = false,
+    this.isDeleted = false,
   });
+
+  Logbook copyWith({
+    String? id,
+    String? title,
+    String? description,
+    DateTime? date,
+    String? category,
+    String? authorId,
+    String? teamId,
+    bool? isPublic,
+    bool? isSynced,
+    bool? isDeleted,
+  }) {
+    return Logbook(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      date: date ?? this.date,
+      category: category ?? this.category,
+      authorId: authorId ?? this.authorId,
+      teamId: teamId ?? this.teamId,
+      isPublic: isPublic ?? this.isPublic,
+      isSynced: isSynced ?? this.isSynced,
+      isDeleted: isDeleted ?? this.isDeleted,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -62,9 +96,11 @@ class Logbook {
           ? (map['date'] is String ? DateTime.parse(map['date']) : map['date'])
           : DateTime.now(),
       category: (map['category'] ?? 'Pribadi').toString(),
-      authorId: (map['authorId'] ?? 'unknown_user').toString(),
+      authorId: (map['authorId'] ?? map['username'] ?? 'unknown_user').toString(),
       teamId: (map['teamId'] ?? 'no_team').toString(),
       isPublic: map['isPublic'] ?? false,
+      isSynced: true,   // data dari Cloud selalu dianggap sudah tersinkron
+      isDeleted: false, // data dari Cloud tidak mungkin soft-deleted
     );
   }
 }

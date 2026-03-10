@@ -99,6 +99,62 @@ class MongoService {
     return collection.find(where.eq('teamId', teamId)).toList();
   }
 
+  Future<List<Map<String, dynamic>>> _fetchAllRawLogs() async {
+    final collection = await _getSafeCollection();
+    return collection.find().toList();
+  }
+
+  /// READ: Mengambil semua data dari Cloud (tanpa filter), untuk Asisten
+  Future<List<Logbook>> getAllLogs() async {
+    await LogHelper.writeLog(
+      'INFO: Fetching ALL data (Asisten access)',
+      source: _source,
+      level: 3,
+    );
+
+    try {
+      final data = await _fetchAllRawLogs();
+      await LogHelper.writeLog(
+        'READ: ${data.length} log berhasil diambil (all teams).',
+        source: _source,
+        level: 2,
+      );
+      return data.map((json) => Logbook.fromMap(json)).toList();
+    } catch (firstError) {
+      await LogHelper.writeLog(
+        'WARN: Fetch semua log gagal, mencoba reconnect - $firstError',
+        source: _source,
+        level: 1,
+      );
+      await close();
+      await connect();
+      try {
+        final data = await _fetchAllRawLogs();
+        return data.map((json) => Logbook.fromMap(json)).toList();
+      } catch (secondError) {
+        await LogHelper.writeLog(
+          'ERROR: Fetch semua log gagal setelah reconnect - $secondError',
+          source: _source,
+          level: 1,
+        );
+        return [];
+      }
+    }
+  }
+
+  /// CHECK: Cek apakah log dengan ID tertentu sudah ada di Cloud
+  Future<bool> existsLog(String? id) async {
+    if (id == null) return false;
+    try {
+      final collection = await _getSafeCollection();
+      final result = await collection
+          .findOne(where.id(ObjectId.fromHexString(id)));
+      return result != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// READ: Mengambil data dari Cloud berdasarkan Team ID
   Future<List<Logbook>> getLogs(String teamId) async {
     await LogHelper.writeLog(

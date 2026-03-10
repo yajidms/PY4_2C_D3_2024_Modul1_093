@@ -12,7 +12,6 @@ class LogController {
   final Map<String, String> currentUser;
   late final Box<Logbook> _myBox;
 
-  /// Shorthand getter
   String get _teamId => currentUser['teamId'] ?? '';
 
   LogController({required this.currentUser}) {
@@ -24,243 +23,224 @@ class LogController {
   final ValueNotifier<List<Logbook>> logsNotifier = ValueNotifier([]);
   final ValueNotifier<List<Logbook>> filteredLogs = ValueNotifier([]);
   final ValueNotifier<bool> isLoading = ValueNotifier(false);
+  final ValueNotifier<bool?> syncStatusNotifier = ValueNotifier(null);
 
   final MongoService _mongo = MongoService();
+  static const String _src = 'log_controller.dart';
 
   List<Logbook> get logs => logsNotifier.value;
 
-  /// 1. LOAD DATA (Offline-First Strategy) — filter by teamId
-  Future<void> loadLogs(String teamId) async {
-    // Langkah 1: Ambil data dari Hive (Instan) — tampilkan dulu ke UI
-    final localData = _myBox.values
-        .where((log) => log.teamId == teamId)
-        .toList();
+  void _setLogs(List<Logbook> list) {
+    logsNotifier.value = list;
+    filteredLogs.value = list;
+  }
 
-    logsNotifier.value = localData;
-    filteredLogs.value = localData;
+  dynamic _findHiveKey(String? id) =>
+      _myBox.keys.firstWhere((k) => _myBox.get(k)?.id == id, orElse: () => null);
 
-    await LogHelper.writeLog(
-      'INFO: Cache lokal dimuat (${localData.length} item) dari Hive.',
-      source: 'log_controller.dart',
-      level: 3,
-    );
+  Future<void> _markSynced(dynamic key, Logbook log) =>
+      _myBox.put(key, log.copyWith(isSynced: true, isDeleted: false));
 
-    // Langkah 2: Sync dari Cloud (Background)
+  void _updateNotifier(String? id, Logbook updated) {
+    final list = List<Logbook>.from(logsNotifier.value);
+    final idx = list.indexWhere((l) => l.id == id);
+    if (idx != -1) {
+      list[idx] = updated;
+      _setLogs(list);
+    }
+  }
+
+  Future<void> _log(String msg, {int level = 2}) =>
+      LogHelper.writeLog(msg, source: _src, level: level);
+
+  Future<bool> loadLogs(String teamId) async {
+    // Tampilkan cache lokal dulu (instan)
+    final localData = _myBox.values.where((l) => l.teamId == teamId).toList();
+    _setLogs(localData);
+    await _log('INFO: Cache lokal dimuat (${localData.length} item).', level: 3);
+
     isLoading.value = true;
     try {
       final cloudData = await _mongo.getLogs(teamId);
 
-      // Cegah duplikasi: bersihkan cache lama tim ini, ganti dengan data Cloud
-      final keysToDelete = _myBox.keys
-          .where((k) => _myBox.get(k)?.teamId == teamId)
-          .toList();
+      // Hapus cache lama kecuali item pending
+      final keysToDelete = _myBox.keys.where((k) {
+        final l = _myBox.get(k);
+        return l != null && l.teamId == teamId && l.isSynced && !l.isDeleted;
+      }).toList();
       await _myBox.deleteAll(keysToDelete);
       await _myBox.addAll(cloudData);
 
-      logsNotifier.value = cloudData;
-      filteredLogs.value = cloudData;
+      // Merge: Cloud + pending lokal (excl. soft-deleted)
+      final pending = _myBox.values
+          .where((l) => l.teamId == teamId && (!l.isSynced || l.isDeleted))
+          .toList();
+      final pendingIds = pending.map((l) => l.id).toSet();
+      _setLogs([
+        ...cloudData.where((l) => !pendingIds.contains(l.id)),
+        ...pending.where((l) => !l.isDeleted),
+      ]);
 
-      await LogHelper.writeLog(
-        'SYNC: ${cloudData.length} log berhasil diperbarui dari Atlas (team=$teamId).',
-        source: 'log_controller.dart',
-        level: 2,
-      );
+      await _log('SYNC: ${cloudData.length} log diperbarui dari Atlas (team=$teamId).');
+      return true;
     } catch (e) {
-      await LogHelper.writeLog(
-        'OFFLINE: Menggunakan data cache lokal. Error: $e',
-        source: 'log_controller.dart',
-        level: 2,
-      );
+      await _log('OFFLINE: Menggunakan cache lokal. Error: $e');
+      return false;
     } finally {
       isLoading.value = false;
     }
   }
 
-  // Alias untuk kompatibilitas pemanggil lama di log_view.dart
   Future<void> loadFromDisk({bool syncCloud = true}) => loadLogs(_teamId);
+  Future<bool> fetchLogs() => loadLogs(_teamId);
 
-  /// Alias refresh (dipanggil dari pull-to-refresh di UI)
-  Future<void> fetchLogs() => loadLogs(_teamId);
-
-  /// Mendengarkan perubahan status jaringan (Offline → Online)
   void _setupConnectivityListener() {
-    Connectivity().onConnectivityChanged.listen(
-      (List<ConnectivityResult> results) async {
-        if (results.contains(ConnectivityResult.mobile) ||
-            results.contains(ConnectivityResult.wifi)) {
-          await LogHelper.writeLog(
-            'NETWORK: Koneksi pulih, mencoba sinkronisasi data pending...',
-            source: 'log_controller.dart',
-            level: 3,
-          );
-          await _syncPendingData();
-        }
-      },
-    );
+    Connectivity().onConnectivityChanged.listen((results) async {
+      final online = results.contains(ConnectivityResult.mobile) ||
+          results.contains(ConnectivityResult.wifi);
+      if (!online) return;
+
+      await _log('NETWORK: Koneksi pulih, memulai pending sync queue...', level: 3);
+      await _syncPendingQueue();
+      syncStatusNotifier.value = await loadLogs(_teamId);
+      await Future.delayed(const Duration(seconds: 3));
+      syncStatusNotifier.value = null;
+    });
   }
 
-  /// Sinkronisasi otomatis saat koneksi kembali tersambung
-  Future<void> _syncPendingData() async {
-    await loadLogs(_teamId);
+  Future<void> _syncPendingQueue() async {
+    for (final key in _myBox.keys.toList()) {
+      final log = _myBox.get(key);
+      if (log == null) continue;
+
+      if (log.isDeleted) {
+        await _processPendingDelete(key, log);
+      } else if (!log.isSynced) {
+        await _processPendingWrite(key, log);
+      }
+    }
   }
 
-  /// 2. ADD DATA (Instant Local + Background Cloud)
-  Future<void> addLog(
-    String title,
-    String desc,
-    String category,
-    String authorId,
-    String teamId,
-    bool isPublic,
-  ) async {
-    final newLog = Logbook(
-      id: ObjectId().oid,
-      title: title,
-      description: desc,
-      date: DateTime.now(),
-      category: category,
-      authorId: authorId,
-      teamId: teamId,
-      isPublic: isPublic,
-    );
-
-    // ACTION 1: Simpan ke Hive dan Update UI (Instan)
-    await _myBox.add(newLog);
-    final currentLogs = List<Logbook>.from(logsNotifier.value)..add(newLog);
-    logsNotifier.value = currentLogs;
-    filteredLogs.value = currentLogs;
-
-    // ACTION 2: Kirim ke MongoDB Atlas secara Asinkron (Background)
+  Future<void> _processPendingDelete(dynamic key, Logbook log) async {
     try {
-      await _mongo.insertLog(newLog);
-      await LogHelper.writeLog(
-        'SUCCESS: Data tersinkron ke Cloud',
-        source: 'log_controller.dart',
-      );
-    } catch (e) {
-      await LogHelper.writeLog(
-        'WARNING: Data tersimpan di lokal (Hive), akan sinkron saat online.',
-        source: 'log_controller.dart',
-        level: 1,
-      );
-    }
-  }
-
-  /// 3. UPDATE DATA
-  Future<void> updateLog(
-    int index,
-    String newTitle,
-    String newDesc,
-    String newCategory,
-    bool isPublic,
-  ) async {
-    final currentLogs = List<Logbook>.from(logsNotifier.value);
-    final oldLog = currentLogs[index];
-
-    final updatedLog = Logbook(
-      id: oldLog.id,
-      title: newTitle,
-      description: newDesc,
-      date: DateTime.now(),
-      category: newCategory,
-      authorId: oldLog.authorId,
-      teamId: oldLog.teamId,
-      isPublic: isPublic,
-    );
-
-    // Update UI
-    currentLogs[index] = updatedLog;
-    logsNotifier.value = currentLogs;
-    filteredLogs.value = currentLogs;
-
-    // Cari & Update di Hive lokal
-    final key = _myBox.keys.firstWhere(
-      (k) => _myBox.get(k)?.id == oldLog.id,
-      orElse: () => null,
-    );
-    if (key != null) {
-      await _myBox.put(key, updatedLog);
-    }
-
-    // Sync ke Cloud
-    try {
-      await _mongo.updateLog(updatedLog);
-      await LogHelper.writeLog(
-        'SUCCESS: Update disinkronkan ke Cloud',
-        source: 'log_controller.dart',
-        level: 2,
-      );
-    } catch (e) {
-      await LogHelper.writeLog(
-        'ERROR: Gagal sinkronisasi Update (tersimpan lokal) - $e',
-        source: 'log_controller.dart',
-        level: 1,
-      );
-    }
-  }
-
-  /// 4. DELETE DATA dengan RBAC security check
-  Future<void> removeLog(int index, String userRole, String userId) async {
-    final currentLogs = List<Logbook>.from(logsNotifier.value);
-    final targetLog = currentLogs[index];
-
-    // Lapisan Keamanan Tambahan
-    final isOwner = targetLog.authorId == userId;
-    if (!AccessControlService.canPerform(
-      userRole,
-      AccessControlService.actionDelete,
-      isOwner: isOwner,
-    )) {
-      await LogHelper.writeLog(
-        'SECURITY BREACH: Unauthorized delete attempt by $userId (role: $userRole)',
-        source: 'log_controller.dart',
-        level: 1,
-      );
-      return; // Hentikan eksekusi
-    }
-
-    // Hapus dari UI
-    currentLogs.removeAt(index);
-    logsNotifier.value = currentLogs;
-    filteredLogs.value = currentLogs;
-
-    // Hapus dari Hive
-    final key = _myBox.keys.firstWhere(
-      (k) => _myBox.get(k)?.id == targetLog.id,
-      orElse: () => null,
-    );
-    if (key != null) {
+      if (log.id != null) {
+        await _mongo.deleteLog(ObjectId.fromHexString(log.id!), log.authorId);
+      }
       await _myBox.delete(key);
+      await _log('PENDING DELETE: "${log.title}" dihapus dari Cloud.');
+    } catch (e) {
+      await _log('PENDING DELETE FAIL: "${log.title}" - $e', level: 1);
     }
+  }
 
-    // Hapus dari Cloud
+  Future<void> _processPendingWrite(dynamic key, Logbook log) async {
+    // Cek apakah data sudah ada di Cloud berdasarkan ID untuk menghindari duplikasi
+    final existsInCloud = await _mongo.existsLog(log.id);
     try {
-      if (targetLog.id != null) {
-        await _mongo.deleteLog(
-          ObjectId.fromHexString(targetLog.id!),
-          targetLog.authorId,
-        );
+      if (existsInCloud) {
+        await _mongo.updateLog(log);
+        await _markSynced(key, log);
+        await _log('PENDING UPDATE: "${log.title}" diperbarui ke Cloud.');
+      } else {
+        await _mongo.insertLog(log);
+        await _markSynced(key, log);
+        await _log('PENDING SYNC: "${log.title}" dikirim ke Cloud.');
       }
     } catch (e) {
-      await LogHelper.writeLog(
-        'ERROR: Gagal hapus di Cloud (sudah terhapus di lokal) - $e',
-        source: 'log_controller.dart',
-        level: 1,
-      );
+      await _log('PENDING SYNC FAIL: "${log.title}" - $e', level: 1);
+    }
+  }
+
+  Future<void> addLog(
+    String title, String desc, String category,
+    String authorId, String teamId, bool isPublic,
+  ) async {
+    final newLog = Logbook(
+      id: ObjectId().oid, title: title, description: desc,
+      date: DateTime.now(), category: category,
+      authorId: authorId, teamId: teamId,
+      isPublic: isPublic, isSynced: false, isDeleted: false,
+    );
+
+    final hiveKey = await _myBox.add(newLog);
+    _setLogs([...logsNotifier.value, newLog]);
+
+    try {
+      await _mongo.insertLog(newLog);
+      final synced = newLog.copyWith(isSynced: true);
+      await _myBox.put(hiveKey, synced);
+      _updateNotifier(newLog.id, synced);
+      await _log('SUCCESS: "${newLog.title}" tersinkron ke Cloud.');
+    } catch (e) {
+      await _log('OFFLINE: "${newLog.title}" tersimpan lokal (pending). Error: $e', level: 1);
+    }
+  }
+
+  Future<void> updateLog(
+    int index, String newTitle, String newDesc,
+    String newCategory, bool isPublic,
+  ) async {
+    final list = List<Logbook>.from(logsNotifier.value);
+    final oldLog = list[index];
+
+    final updated = oldLog.copyWith(
+      title: newTitle, description: newDesc, date: DateTime.now(),
+      category: newCategory, isPublic: isPublic,
+      isSynced: false, isDeleted: false,
+    );
+
+    list[index] = updated;
+    _setLogs(list);
+
+    final key = _findHiveKey(oldLog.id);
+    if (key != null) await _myBox.put(key, updated);
+
+    try {
+      await _mongo.updateLog(updated);
+      final synced = updated.copyWith(isSynced: true);
+      if (key != null) await _myBox.put(key, synced);
+      _updateNotifier(updated.id, synced);
+      await _log('SUCCESS: Update "${updated.title}" tersinkron ke Cloud.');
+    } catch (e) {
+      await _log('OFFLINE: Update "${updated.title}" tersimpan lokal (pending). Error: $e', level: 1);
+    }
+  }
+
+  Future<void> removeLog(int index, String userRole, String userId) async {
+    final list = List<Logbook>.from(logsNotifier.value);
+    final target = list[index];
+
+    if (!AccessControlService.canPerform(
+      userRole, AccessControlService.actionDelete,
+      isOwner: target.authorId == userId,
+    )) {
+      await _log('SECURITY BREACH: Unauthorized delete by $userId (role: $userRole)', level: 1);
+      return;
+    }
+
+    list.removeAt(index);
+    _setLogs(list);
+
+    final key = _findHiveKey(target.id);
+
+    try {
+      if (target.id != null) {
+        await _mongo.deleteLog(ObjectId.fromHexString(target.id!), target.authorId);
+      }
+      if (key != null) await _myBox.delete(key);
+      await _log('DELETE: "${target.title}" dihapus dari Cloud & Hive.');
+    } catch (e) {
+      if (key != null) await _myBox.put(key, target.copyWith(isDeleted: true));
+      await _log('OFFLINE DELETE: "${target.title}" ditandai soft-delete (pending). Error: $e', level: 1);
     }
   }
 
   void searchLog(String query) {
-    if (query.isEmpty) {
-      filteredLogs.value = logsNotifier.value;
-    } else {
-      filteredLogs.value = logsNotifier.value
-          .where(
-            (log) => log.title.toLowerCase().contains(query.toLowerCase()),
-          )
-          .toList();
-    }
+    filteredLogs.value = query.isEmpty
+        ? logsNotifier.value
+        : logsNotifier.value
+            .where((l) => l.title.toLowerCase().contains(query.toLowerCase()))
+            .toList();
   }
 }
-
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../onboarding/onboarding_view.dart';
 import 'log_controller.dart';
 import 'models/log_model.dart';
@@ -34,82 +35,100 @@ class _LogViewState extends State<LogView> {
     super.initState();
     _controller = LogController(currentUser: widget.currentUser);
     Future.microtask(() => _initDatabase());
+
+    // Listen sync otomatis dari connectivity listener di controller
+    _controller.syncStatusNotifier.addListener(_onSyncStatusChanged);
+  }
+
+  void _onSyncStatusChanged() {
+    final status = _controller.syncStatusNotifier.value;
+    if (!mounted || status == null) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
+    if (status == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Koneksi pulih. Data berhasil diperbarui dari Cloud."),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.syncStatusNotifier.removeListener(_onSyncStatusChanged);
+    super.dispose();
   }
 
   Future<void> _initDatabase() async {
     setState(() => _isLoading = true);
     try {
-      await LogHelper.writeLog(
-        "UI: Memulai inisialisasi database...",
-        source: "log_view.dart",
-      );
+      // Cek konektivitas dulu agar tidak menunggu timeout saat offline
+      final connectivity = await Connectivity().checkConnectivity();
+      final isOnline = connectivity.contains(ConnectivityResult.mobile) ||
+          connectivity.contains(ConnectivityResult.wifi);
+
+      if (!isOnline) {
+        // Langsung muat dari Hive (instan) tanpa mencoba koneksi Cloud
+        await _controller.loadFromDisk();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Offline Mode: Menampilkan data lokal."),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
 
       await MongoService().connect().timeout(
-        const Duration(seconds: 15),
-        onTimeout: () => throw Exception(
-          "Koneksi Cloud Timeout. Periksa sinyal/IP Whitelist.",
-        ),
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception("Koneksi Cloud Timeout."),
       );
-
-      await LogHelper.writeLog(
-        "UI: Koneksi MongoService BERHASIL.",
-        source: "log_view.dart",
-      );
-
       await _controller.loadFromDisk();
-
-      await LogHelper.writeLog(
-        "UI: Data berhasil dimuat ke Notifier.",
-        source: "log_view.dart",
-      );
     } catch (e) {
-      await LogHelper.writeLog(
-        "UI: Error - $e",
-        source: "log_view.dart",
-        level: 1,
-      );
+      await LogHelper.writeLog("UI: Error - $e", source: "log_view.dart", level: 1);
+      // Tetap muat dari Hive walau Cloud gagal
+      await _controller.loadFromDisk();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              "Offline Mode Warning: Gagal terhubung ke Cloud. Menampilkan data lokal.",
-            ),
+            content: Text("Offline Mode: Gagal ke Cloud. Menampilkan data lokal."),
             backgroundColor: Colors.orange,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _refreshData() async {
-    try {
-      await _controller.fetchLogs();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Data berhasil diperbarui dari Cloud."),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
+    final success = await _controller.fetchLogs();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Data berhasil diperbarui dari Cloud."),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Offline Mode: Koneksi terputus, menampilkan data lokal.",
           ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Offline Mode Warning: Koneksi terputus, menampilkan data lokal.",
-            ),
-            backgroundColor: Colors.orange,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -204,9 +223,17 @@ class _LogViewState extends State<LogView> {
                   onRefresh: _refreshData,
                   child: Builder(
                     builder: (context) {
-                      // Tampilkan jika (Saya adalah Owner) ATAU (Catatan tersebut Publik)
                       final displayLogs = currentLogs.where((log) {
-                        return log.authorId == _uid || log.isPublic == true;
+                        final String currentUid = widget.currentUser['uid'] ?? '';
+                        final String currentRole = widget.currentUser['role'] ?? 'Anggota';
+
+                        final bool isOwner = log.authorId == currentUid;
+                        final bool isPublic = log.isPublic == true;
+                        final bool isPemilik = currentRole == 'Pemilik Catatan';
+
+                        // Pemilik Catatan: lihat semua miliknya (private & public)
+                        // Ketua Tim & Anggota: hanya lihat yang public
+                        return isPemilik ? isOwner : isPublic;
                       }).toList();
 
                       if (displayLogs.isEmpty) {
@@ -327,6 +354,8 @@ class _LogViewState extends State<LogView> {
                                   : null,
                               child: LogItemWidget(
                                 log: log,
+                                canEdit: canEdit,
+                                canDelete: canDelete,
                                 onEditPressed: canEdit && realIndex != -1
                                     ? () => _goToEditor(log: log, index: realIndex)
                                     : () {},
