@@ -142,18 +142,6 @@ class MongoService {
     }
   }
 
-  /// CHECK: Cek apakah log dengan ID tertentu sudah ada di Cloud
-  Future<bool> existsLog(String? id) async {
-    if (id == null) return false;
-    try {
-      final collection = await _getSafeCollection();
-      final result = await collection
-          .findOne(where.id(ObjectId.fromHexString(id)));
-      return result != null;
-    } catch (_) {
-      return false;
-    }
-  }
 
   /// READ: Mengambil data dari Cloud berdasarkan Team ID
   Future<List<Logbook>> getLogs(String teamId) async {

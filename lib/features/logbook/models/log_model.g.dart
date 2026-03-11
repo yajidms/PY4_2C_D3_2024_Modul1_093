@@ -25,15 +25,13 @@ class LogbookAdapter extends TypeAdapter<Logbook> {
       authorId: fields[5] as String,
       teamId: fields[6] as String,
       isPublic: fields[7] as bool,
-      isSynced: fields[8] as bool,
-      isDeleted: fields[9] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Logbook obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -49,11 +47,7 @@ class LogbookAdapter extends TypeAdapter<Logbook> {
       ..writeByte(6)
       ..write(obj.teamId)
       ..writeByte(7)
-      ..write(obj.isPublic)
-      ..writeByte(8)
-      ..write(obj.isSynced)
-      ..writeByte(9)
-      ..write(obj.isDeleted);
+      ..write(obj.isPublic);
   }
 
   @override

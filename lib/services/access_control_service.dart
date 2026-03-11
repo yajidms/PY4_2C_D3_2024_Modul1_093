@@ -18,10 +18,8 @@ class AccessControlService {
   };
 
   static bool canPerform(String role, String action, {bool isOwner = false}) {
+    // Pemilik Catatan: semua aksi hanya boleh jika isOwner
     if (role == 'Pemilik Catatan') {
-      // Create & Read bebas tanpa syarat isOwner
-      if (action == actionCreate || action == actionRead) return true;
-      // Update & Delete hanya jika pemilik data
       return isOwner;
     }
 
@@ -30,4 +28,3 @@ class AccessControlService {
     return permissions.contains(action);
   }
 }
-

@@ -130,32 +130,24 @@ class LogItemWidget extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: log.isSynced
-                                  ? Colors.blue.shade50
-                                  : Colors.orange.shade50,
+                              color: Colors.blue.shade50,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Row(
+                            child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  log.isSynced
-                                      ? Icons.cloud_done_outlined
-                                      : Icons.cloud_upload_outlined,
+                                  Icons.cloud_done_outlined,
                                   size: 13,
-                                  color: log.isSynced
-                                      ? Colors.blue
-                                      : Colors.orange.shade700,
+                                  color: Colors.blue,
                                 ),
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4),
                                 Text(
-                                  log.isSynced ? 'Cloud' : 'Pending',
+                                  'Cloud',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color: log.isSynced
-                                        ? Colors.blue
-                                        : Colors.orange.shade700,
+                                    color: Colors.blue,
                                   ),
                                 ),
                               ],

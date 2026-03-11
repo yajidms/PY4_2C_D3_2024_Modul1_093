@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import '../onboarding/onboarding_view.dart';
 import 'log_controller.dart';
 import 'models/log_model.dart';
@@ -64,46 +63,50 @@ class _LogViewState extends State<LogView> {
   Future<void> _initDatabase() async {
     setState(() => _isLoading = true);
     try {
-      // Cek konektivitas dulu agar tidak menunggu timeout saat offline
-      final connectivity = await Connectivity().checkConnectivity();
-      final isOnline = connectivity.contains(ConnectivityResult.mobile) ||
-          connectivity.contains(ConnectivityResult.wifi);
-
-      if (!isOnline) {
-        // Langsung muat dari Hive (instan) tanpa mencoba koneksi Cloud
-        await _controller.loadFromDisk();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Offline Mode: Menampilkan data lokal."),
-              backgroundColor: Colors.orange,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-        return;
-      }
+      await LogHelper.writeLog(
+        "UI: Memulai inisialisasi database...",
+        source: "log_view.dart",
+      );
 
       await MongoService().connect().timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception("Koneksi Cloud Timeout."),
+        const Duration(seconds: 15),
+        onTimeout: () => throw Exception(
+          "Koneksi Cloud Timeout. Periksa sinyal/IP Whitelist.",
+        ),
       );
+
+      await LogHelper.writeLog(
+        "UI: Koneksi MongoService BERHASIL.",
+        source: "log_view.dart",
+      );
+
       await _controller.loadFromDisk();
+
+      await LogHelper.writeLog(
+        "UI: Data berhasil dimuat ke Notifier.",
+        source: "log_view.dart",
+      );
     } catch (e) {
-      await LogHelper.writeLog("UI: Error - $e", source: "log_view.dart", level: 1);
-      // Tetap muat dari Hive walau Cloud gagal
-      await _controller.loadFromDisk();
+      await LogHelper.writeLog(
+        "UI: Error - $e",
+        source: "log_view.dart",
+        level: 1,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Offline Mode: Gagal ke Cloud. Menampilkan data lokal."),
+            content: Text(
+              "Offline Mode Warning: Gagal terhubung ke Cloud. Menampilkan data lokal.",
+            ),
             backgroundColor: Colors.orange,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -229,11 +232,9 @@ class _LogViewState extends State<LogView> {
 
                         final bool isOwner = log.authorId == currentUid;
                         final bool isPublic = log.isPublic == true;
-                        final bool isPemilik = currentRole == 'Pemilik Catatan';
+                        final bool isAsisten = currentRole == 'Asisten';
 
-                        // Pemilik Catatan: lihat semua miliknya (private & public)
-                        // Ketua Tim & Anggota: hanya lihat yang public
-                        return isPemilik ? isOwner : isPublic;
+                        return isOwner || isPublic || isAsisten;
                       }).toList();
 
                       if (displayLogs.isEmpty) {
