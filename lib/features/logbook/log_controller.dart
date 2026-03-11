@@ -19,7 +19,9 @@ class LogController {
 
   LogController({required this.currentUser}) {
     _myBox = Hive.box<Logbook>('offline_logs');
-    loadLogs(_teamId);
+    // Muat data lokal dari Hive terlebih dahulu (instan, tanpa menyentuh cloud)
+    // Sync ke cloud akan dilakukan oleh _initDatabase() di log_view.dart
+    _loadLocalCache();
     _setupConnectivityListener();
   }
 
@@ -33,6 +35,16 @@ class LogController {
   final MongoService _mongo = MongoService();
 
   List<Logbook> get logs => logsNotifier.value;
+
+  /// Hanya muat cache lokal dari Hive (tanpa sync cloud) — dipanggil dari constructor
+  void _loadLocalCache() {
+    final bool isAsisten = _role == 'Asisten';
+    final localData = isAsisten
+        ? _myBox.values.toList()
+        : _myBox.values.where((log) => log.teamId == _teamId).toList();
+    logsNotifier.value = localData;
+    filteredLogs.value = localData;
+  }
 
   /// 1. LOAD DATA (Offline-First Strategy) — filter by teamId, kecuali Asisten
   Future<bool> loadLogs(String teamId) async {

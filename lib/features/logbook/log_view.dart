@@ -3,7 +3,6 @@ import '../onboarding/onboarding_view.dart';
 import 'log_controller.dart';
 import 'models/log_model.dart';
 import 'widgets/log_item_widget.dart';
-import '../../services/mongo_service.dart';
 import '../../helpers/log_helper.dart';
 import '../../services/access_control_service.dart';
 import 'log_editor_page.dart';
@@ -64,35 +63,22 @@ class _LogViewState extends State<LogView> {
     setState(() => _isLoading = true);
     try {
       await LogHelper.writeLog(
-        "UI: Memulai inisialisasi database...",
+        "UI: Memulai sinkronisasi data dari Cloud...",
         source: "log_view.dart",
       );
 
-      await MongoService().connect().timeout(
-        const Duration(seconds: 15),
-        onTimeout: () => throw Exception(
-          "Koneksi Cloud Timeout. Periksa sinyal/IP Whitelist.",
-        ),
-      );
+      // fetchLogs() menangani koneksi + sinkronisasi secara internal
+      final success = await _controller.fetchLogs();
 
       await LogHelper.writeLog(
-        "UI: Koneksi MongoService BERHASIL.",
+        success
+            ? "UI: Data berhasil disinkronkan dari Cloud."
+            : "UI: Gagal sync Cloud, menampilkan data lokal.",
         source: "log_view.dart",
+        level: success ? 2 : 1,
       );
 
-      await _controller.loadFromDisk();
-
-      await LogHelper.writeLog(
-        "UI: Data berhasil dimuat ke Notifier.",
-        source: "log_view.dart",
-      );
-    } catch (e) {
-      await LogHelper.writeLog(
-        "UI: Error - $e",
-        source: "log_view.dart",
-        level: 1,
-      );
-      if (mounted) {
+      if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -103,6 +89,12 @@ class _LogViewState extends State<LogView> {
           ),
         );
       }
+    } catch (e) {
+      await LogHelper.writeLog(
+        "UI: Error tidak terduga - $e",
+        source: "log_view.dart",
+        level: 1,
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

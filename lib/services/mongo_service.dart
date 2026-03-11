@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 import '../features/logbook/models/log_model.dart';
@@ -11,6 +12,9 @@ class MongoService {
 
   Db? _db;
   DbCollection? _collection;
+
+  // Lock untuk mencegah race condition pada pemanggilan connect() secara bersamaan
+  Future<void>? _connectingFuture;
 
   final String _source = 'mongo_service.dart';
 
@@ -40,6 +44,30 @@ class MongoService {
   }
 
   Future<void> connect() async {
+    // Jika koneksi sudah aktif, langsung return tanpa buat koneksi baru
+    if (_db != null && _db!.isConnected && _collection != null) {
+      await LogHelper.writeLog(
+        'DATABASE: Koneksi sudah aktif, memakai sesi yang ada.',
+        source: _source,
+        level: 3,
+      );
+      return;
+    }
+
+    // Jika ada proses koneksi yang sedang berjalan, tunggu hasilnya (cegah race condition)
+    if (_connectingFuture != null) {
+      await LogHelper.writeLog(
+        'DATABASE: Menunggu proses koneksi yang sedang berjalan...',
+        source: _source,
+        level: 3,
+      );
+      return _connectingFuture!;
+    }
+
+    // Mulai proses koneksi baru dengan Completer sebagai lock
+    final completer = Completer<void>();
+    _connectingFuture = completer.future;
+
     try {
       final dbUri = dotenv.env['MONGODB_URI'];
       if (dbUri == null || dbUri.trim().isEmpty) {
@@ -58,18 +86,9 @@ class MongoService {
 
       final normalizedUri = _ensureDatabaseInUri(dbUri, dbName);
 
-      if (_db != null && _db!.isConnected && _collection != null) {
-        await LogHelper.writeLog(
-          'DATABASE: Koneksi sudah aktif, memakai sesi yang ada.',
-          source: _source,
-          level: 3,
-        );
-        return;
-      }
-
       _db = await Db.create(normalizedUri);
       await _db!.open().timeout(
-        const Duration(seconds: 15),
+        const Duration(seconds: 20),
         onTimeout: () {
           throw Exception(
             'Koneksi Timeout. Cek IP Whitelist (0.0.0.0/0) atau Sinyal HP.',
@@ -84,13 +103,24 @@ class MongoService {
         source: _source,
         level: 2,
       );
+
+      completer.complete();
     } catch (e) {
+      // Reset state agar koneksi bisa dicoba ulang
+      _db = null;
+      _collection = null;
+
       await LogHelper.writeLog(
         'DATABASE: Gagal Koneksi - $e',
         source: _source,
         level: 1,
       );
+
+      completer.completeError(e);
       rethrow;
+    } finally {
+      // Selalu hapus lock setelah selesai (berhasil maupun gagal)
+      _connectingFuture = null;
     }
   }
 
@@ -282,6 +312,7 @@ class MongoService {
       await _db!.close();
       _db = null;
       _collection = null;
+      _connectingFuture = null;
 
       await LogHelper.writeLog(
         'DATABASE: Koneksi ditutup',
