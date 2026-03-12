@@ -1,12 +1,11 @@
 # logbook_app_093
+## Modul 5_Part 2
+
+<img src="./img.jpg" width="30%"> <img src="./img1.jpg" width="30%"> <img src="./img2.jpg" width="30%"> <img src="./img3.jpg" width="30%"> <img src="./img4.jpg" width="30%"> <img src="./img5.jpg" width="30%">
+
 ---
-## Modul 5_Part 1
 
-<img src="./img.png" width="30%"> <img src="./img1.png" width="30%"> <img src="./img2.jpg" width="30%"> <img src="./img3.png" width="30%">
-
-## Konfigurasi .env (Audit Logging)
-
-Tambahkan key berikut di file `.env`:
+## Konfigurasi `.env`
 
 ```env
 MONGODB_URI=<uri-atlas>
@@ -16,7 +15,23 @@ LOG_LEVEL=3
 LOG_MUTE=connection_test.dart,mongo_service.dart
 ```
 
-Catatan:
-- `LOG_LEVEL=3` -> log tampil juga di terminal (verbose mode).
-- `LOG_LEVEL=1/2` -> log tetap masuk debug logger, tapi terminal di-mute.
-- `LOG_MUTE` berisi daftar source (dipisah koma) untuk disembunyikan dari output log.
+---
+
+## Fitur
+
+| # | Fitur | Keterangan |
+|---|-------|------------|
+| 1 | 🚀 **Onboarding** | Slideshow 3 halaman sebelum masuk ke login |
+| 2 | 🔐 **Login + Auto-lock** | Maks. 3x gagal → tombol terkunci 10 detik |
+| 3 | 🛡️ **RBAC** | Ketua (full), Anggota (CRUD milik sendiri), Asisten (Read+Update) |
+| 4 | ☁️ **MongoDB Atlas** | CRUD cloud, singleton, race condition lock, timeout 20s |
+| 5 | 📦 **Offline-First (Hive)** | Cache lokal ditampilkan instan, sync cloud di background |
+| 6 | 📡 **Konektivitas Real-Time** | Auto-sync saat koneksi pulih, notifikasi snackbar |
+| 7 | 🔍 **Search Real-Time** | Filter judul & deskripsi menggunakan `ValueNotifier` |
+| 8 | 🏷️ **Kategori + Color Coding** | Dropdown Mechanical/Electronic/Software, warna & ikon per kategori |
+| 9 | ✍️ **Markdown Editor** | Tab Editor + Pratinjau live, mode Read-Only untuk tamu |
+| 10 | 🔒 **Privasi Catatan** | Toggle Publik/Privat per catatan |
+| 11 | 🎬 **Empty State (Lottie)** | Animasi + tombol buat catatan saat list kosong |
+| 12 | 🗑️ **Swipe-to-Delete** | Geser kiri untuk hapus, snackbar konfirmasi |
+| 13 | 🔄 **Pull-to-Refresh** | Tarik ke bawah untuk sync manual dari cloud |
+| 14 | 📋 **Audit Logging** | Level ERROR/INFO/VERBOSE, konfigurasi via `LOG_LEVEL` & `LOG_MUTE` |
