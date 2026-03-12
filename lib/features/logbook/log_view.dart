@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import '../onboarding/onboarding_view.dart';
 import 'log_controller.dart';
 import 'models/log_model.dart';
@@ -187,10 +188,11 @@ class _LogViewState extends State<LogView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.rocket_launch_outlined,
-            size: 80,
-            color: Colors.grey,
+          Lottie.asset(
+            'assets/lottie/empty_state.json',
+            width: 180,
+            height: 180,
+            repeat: true,
           ),
           const SizedBox(height: 16),
           const Text(

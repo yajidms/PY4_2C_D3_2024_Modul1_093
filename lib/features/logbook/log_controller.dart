@@ -310,8 +310,11 @@ class LogController {
     if (query.isEmpty) {
       filteredLogs.value = logsNotifier.value;
     } else {
+      final q = query.toLowerCase();
       filteredLogs.value = logsNotifier.value
-          .where((log) => log.title.toLowerCase().contains(query.toLowerCase()))
+          .where((log) =>
+              log.title.toLowerCase().contains(q) ||
+              log.description.toLowerCase().contains(q))
           .toList();
     }
   }

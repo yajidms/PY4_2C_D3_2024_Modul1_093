@@ -19,6 +19,7 @@ dependencies:
   hive_flutter: ^1.1.0
   connectivity_plus: ^7.0.0
   flutter_markdown: ^0.7.7+1
+  lottie: ^3.3.2
 
 dev_dependencies:
   flutter_test:
@@ -34,4 +35,5 @@ flutter:
   # Mendaftarkan folder gambar
   assets:
     - assets/images/
+    - assets/lottie/
     - .env
