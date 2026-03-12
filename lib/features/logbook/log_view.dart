@@ -23,6 +23,7 @@ class _LogViewState extends State<LogView> {
   late LogController _controller;
 
   bool _isLoading = false;
+  bool _isOnline = true;
 
   // Shorthand getters untuk data user yang sering dipakai
   String get _uid => widget.currentUser['uid'] ?? '';
@@ -36,6 +37,7 @@ class _LogViewState extends State<LogView> {
 
     // Listen sync otomatis dari connectivity listener di controller
     _controller.syncStatusNotifier.addListener(_onSyncStatusChanged);
+    _controller.isOnlineNotifier.addListener(_onConnectivityChanged);
   }
 
   void _onSyncStatusChanged() {
@@ -53,9 +55,17 @@ class _LogViewState extends State<LogView> {
     }
   }
 
+  void _onConnectivityChanged() {
+    if (!mounted) return;
+    setState(() {
+      _isOnline = _controller.isOnlineNotifier.value;
+    });
+  }
+
   @override
   void dispose() {
     _controller.syncStatusNotifier.removeListener(_onSyncStatusChanged);
+    _controller.isOnlineNotifier.removeListener(_onConnectivityChanged);
     super.dispose();
   }
 
@@ -364,6 +374,7 @@ class _LogViewState extends State<LogView> {
                                 log: log,
                                 canEdit: canEdit,
                                 canDelete: canDelete,
+                                isOnline: _isOnline,
                                 onTap: () => canEdit && realIndex != -1
                                     ? _goToEditor(log: log, index: realIndex)
                                     : _goToViewer(log),

@@ -15,6 +15,7 @@ class LogItemWidget extends StatelessWidget {
   final VoidCallback? onTap;
   final bool canEdit;
   final bool canDelete;
+  final bool isOnline;
 
   const LogItemWidget({
     super.key,
@@ -24,6 +25,7 @@ class LogItemWidget extends StatelessWidget {
     this.onTap,
     this.canEdit = true,
     this.canDelete = true,
+    this.isOnline = true,
   });
 
   IconData _getCategoryIcon(String category) {
@@ -128,35 +130,43 @@ class LogItemWidget extends StatelessWidget {
                           spacing: 8,
                           runSpacing: 8,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.cloud_done_outlined,
-                                    size: 13,
-                                    color: Colors.blue,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Cloud',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
                             ),
+                            decoration: BoxDecoration(
+                              color: isOnline
+                                  ? Colors.blue.shade50
+                                  : Colors.orange.shade50,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isOnline
+                                      ? Icons.cloud_done_outlined
+                                      : Icons.cloud_off_outlined,
+                                  size: 13,
+                                  color: isOnline
+                                      ? Colors.blue
+                                      : Colors.orange.shade700,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  isOnline ? 'Cloud' : 'Offline',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: isOnline
+                                        ? Colors.blue
+                                        : Colors.orange.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                             // PRIVACY INDICATOR CHIP
                             Container(
                               padding: const EdgeInsets.symmetric(

@@ -32,6 +32,9 @@ class LogController {
   // null = idle, true = sync berhasil, false = sync gagal/offline
   final ValueNotifier<bool?> syncStatusNotifier = ValueNotifier(null);
 
+  // true = online, false = offline
+  final ValueNotifier<bool> isOnlineNotifier = ValueNotifier(true);
+
   final MongoService _mongo = MongoService();
 
   /// null = belum diketahui (state awal), true = sebelumnya offline, false = sebelumnya online
@@ -122,6 +125,7 @@ class LogController {
         // Hanya catat kondisi awal tanpa memicu sync atau notifikasi.
         if (_wasOffline == null) {
           _wasOffline = !isOnline;
+          isOnlineNotifier.value = isOnline;
           await LogHelper.writeLog(
             'NETWORK: State awal terdeteksi — ${isOnline ? "Online" : "Offline"}',
             source: 'log_controller.dart',
@@ -131,6 +135,7 @@ class LogController {
         }
 
         if (isOnline) {
+          isOnlineNotifier.value = true;
           if (_wasOffline == true) {
             // Benar-benar baru pulih dari offline → tampilkan notifikasi
             await LogHelper.writeLog(
@@ -148,6 +153,7 @@ class LogController {
           _wasOffline = false;
         } else {
           _wasOffline = true;
+          isOnlineNotifier.value = false;
           await LogHelper.writeLog(
             'NETWORK: Koneksi terputus.',
             source: 'log_controller.dart',
