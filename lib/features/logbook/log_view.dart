@@ -142,6 +142,21 @@ class _LogViewState extends State<LogView> {
     );
   }
 
+  /// Navigasi ke halaman pratinjau (read-only)
+  void _goToViewer(Logbook log) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LogEditorPage(
+          log: log,
+          controller: _controller,
+          currentUser: widget.currentUser,
+          isReadOnly: true,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -349,6 +364,9 @@ class _LogViewState extends State<LogView> {
                                 log: log,
                                 canEdit: canEdit,
                                 canDelete: canDelete,
+                                onTap: () => canEdit && realIndex != -1
+                                    ? _goToEditor(log: log, index: realIndex)
+                                    : _goToViewer(log),
                                 onEditPressed: canEdit && realIndex != -1
                                     ? () => _goToEditor(log: log, index: realIndex)
                                     : () {},

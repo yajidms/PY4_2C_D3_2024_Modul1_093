@@ -8,6 +8,7 @@ class LogEditorPage extends StatefulWidget {
   final int? index;
   final LogController controller;
   final Map<String, String> currentUser;
+  final bool isReadOnly;
 
   const LogEditorPage({
     super.key,
@@ -15,6 +16,7 @@ class LogEditorPage extends StatefulWidget {
     this.index,
     required this.controller,
     required this.currentUser,
+    this.isReadOnly = false,
   });
 
   @override
@@ -78,81 +80,130 @@ class _LogEditorPageState extends State<LogEditorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isReadOnly = widget.isReadOnly;
+
     return DefaultTabController(
-      length: 2,
+      length: isReadOnly ? 1 : 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.log == null ? "Catatan Baru" : "Edit Catatan"),
-          bottom: const TabBar(
+          title: Text(
+            isReadOnly
+                ? "Lihat Catatan"
+                : (widget.log == null ? "Catatan Baru" : "Edit Catatan"),
+          ),
+          bottom: TabBar(
             tabs: [
-              Tab(text: "Editor"),
-              Tab(text: "Pratinjau"),
+              if (!isReadOnly) const Tab(text: "Editor"),
+              const Tab(text: "Pratinjau"),
             ],
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.save),
-              tooltip: "Simpan",
-              onPressed: _save,
-            ),
+            if (!isReadOnly)
+              IconButton(
+                icon: const Icon(Icons.save),
+                tooltip: "Simpan",
+                onPressed: _save,
+              ),
           ],
         ),
         body: TabBarView(
           children: [
-            // Tab 1: Mode Editor Teks
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(labelText: "Judul Catatan"),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _categoryController,
-                    decoration: const InputDecoration(labelText: "Kategori"),
-                  ),
-                  const SizedBox(height: 10),
-                  // PRIVACY TOGGLE
-                  SwitchListTile(
-                    title: const Text("Buat Publik"),
-                    subtitle: Text(
-                      _isPublic
-                          ? "Dapat dilihat oleh rekan satu tim."
-                          : "Hanya Anda yang dapat melihat catatan ini.",
+            if (!isReadOnly)
+              // Tab 1: Mode Editor Teks
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(labelText: "Judul Catatan"),
                     ),
-                    value: _isPublic,
-                    onChanged: (bool value) {
-                      setState(() {
-                        _isPublic = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: _descController,
-                      maxLines: null,
-                      expands: true,
-                      keyboardType: TextInputType.multiline,
-                      decoration: const InputDecoration(
-                        hintText:
-                            "Tulis laporan dengan Markdown di sini...\nContoh:\n# Judul Besar\n**Teks Tebal**\n- Item List",
-                        border: InputBorder.none,
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _categoryController,
+                      decoration: const InputDecoration(labelText: "Kategori"),
+                    ),
+                    const SizedBox(height: 10),
+                    // PRIVACY TOGGLE
+                    SwitchListTile(
+                      title: const Text("Buat Publik"),
+                      subtitle: Text(
+                        _isPublic
+                            ? "Dapat dilihat oleh rekan satu tim."
+                            : "Hanya Anda yang dapat melihat catatan ini.",
+                      ),
+                      value: _isPublic,
+                      onChanged: (bool value) {
+                        setState(() {
+                          _isPublic = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _descController,
+                        maxLines: null,
+                        expands: true,
+                        keyboardType: TextInputType.multiline,
+                        decoration: const InputDecoration(
+                          hintText:
+                              "Tulis laporan dengan Markdown di sini...\nContoh:\n# Judul Besar\n**Teks Tebal**\n- Item List",
+                          border: InputBorder.none,
+                        ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+            // Tab Pratinjau (read-only mode: tampilkan info catatan + markdown)
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isReadOnly && widget.log != null) ...[
+                    Text(
+                      widget.log!.title,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          widget.log!.isPublic ? Icons.public : Icons.lock,
+                          size: 14,
+                          color: widget.log!.isPublic ? Colors.green : Colors.grey,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          widget.log!.isPublic ? "Publik" : "Privat",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: widget.log!.isPublic ? Colors.green : Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.folder_outlined, size: 14, color: Colors.blueGrey),
+                        const SizedBox(width: 4),
+                        Text(
+                          widget.log!.category,
+                          style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+                  ],
+                  MarkdownBody(
+                    data: _descController.text.isEmpty
+                        ? '*Belum ada konten untuk ditampilkan...*'
+                        : _descController.text,
+                    selectable: true,
                   ),
                 ],
-              ),
-            ),
-            // Tab 2: Live Preview Markdown
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Markdown(
-                data: _descController.text.isEmpty
-                    ? '*Belum ada konten untuk ditampilkan...*'
-                    : _descController.text,
               ),
             ),
           ],
