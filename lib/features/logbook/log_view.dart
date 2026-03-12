@@ -167,6 +167,60 @@ class _LogViewState extends State<LogView> {
     );
   }
 
+  /// Warna latar Card berdasarkan kategori proyek
+  Color _getCategoryColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'mechanical':
+        return Colors.green.shade100;
+      case 'electronic':
+        return Colors.blue.shade100;
+      case 'software':
+        return Colors.purple.shade100;
+      default:
+        return Colors.grey.shade100;
+    }
+  }
+
+  /// Tampilan informatif saat tidak ada catatan
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.rocket_launch_outlined,
+            size: 80,
+            color: Colors.grey,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            "Belum ada aktivitas hari ini?",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "Mulai catat kemajuan proyek Anda!",
+            style: TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 24),
+          if (AccessControlService.canPerform(
+            _role,
+            AccessControlService.actionCreate,
+          ))
+            ElevatedButton.icon(
+              onPressed: () => _goToEditor(),
+              icon: const Icon(Icons.add),
+              label: const Text("Buat Catatan Baru"),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -210,7 +264,7 @@ class _LogViewState extends State<LogView> {
             child: TextField(
               onChanged: (val) => _controller.searchLog(val),
               decoration: InputDecoration(
-                hintText: "Cari catatan...",
+                hintText: "Cari judul catatan...",
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -244,12 +298,15 @@ class _LogViewState extends State<LogView> {
                   child: Builder(
                     builder: (context) {
                       final displayLogs = currentLogs.where((log) {
-                        final String currentUid = widget.currentUser['uid'] ?? '';
-                        final String currentRole = widget.currentUser['role'] ?? 'Anggota';
+                        final String currentUid =
+                            widget.currentUser['uid'] ?? '';
+                        final String currentRole =
+                            widget.currentUser['role'] ?? 'Anggota';
 
                         final bool isOwner = log.authorId == currentUid;
                         final bool isPublic = log.isPublic == true;
-                        final bool isPrivileged = currentRole == 'Asisten' || currentRole == 'Ketua';
+                        final bool isPrivileged =
+                            currentRole == 'Asisten' || currentRole == 'Ketua';
 
                         return isOwner || isPublic || isPrivileged;
                       }).toList();
@@ -257,163 +314,180 @@ class _LogViewState extends State<LogView> {
                       if (displayLogs.isEmpty) {
                         return ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(vertical: 24),
                           children: [
                             SizedBox(
-                              height: 420,
-                              child: Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.cloud_off, size: 64, color: Colors.grey),
-                                    const SizedBox(height: 16),
-                                    const Text("Belum ada catatan di Cloud."),
-                                    const SizedBox(height: 12),
-                                    if (AccessControlService.canPerform(
-                                      _role,
-                                      AccessControlService.actionCreate,
-                                    ))
-                                      ElevatedButton(
-                                        onPressed: () => _goToEditor(),
-                                        child: const Text("Buat Catatan Pertama"),
-                                      ),
-                                  ],
-                                ),
-                              ),
+                              height: MediaQuery.of(context).size.height * 0.65,
+                              child: _buildEmptyState(),
                             ),
                           ],
                         );
                       }
 
                       return ListView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          itemCount: displayLogs.length,
-                          itemBuilder: (context, index) {
-                            final log = displayLogs[index];
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        itemCount: displayLogs.length,
+                        itemBuilder: (context, index) {
+                          final log = displayLogs[index];
 
-                            // Cek apakah user yang login adalah pembuat catatan ini
-                            final bool isOwner = log.authorId == _uid;
+                          // Cek apakah user yang login adalah pembuat catatan ini
+                          final bool isOwner = log.authorId == _uid;
 
-                            final bool canEdit = AccessControlService.canPerform(
-                              _role,
-                              AccessControlService.actionUpdate,
-                              isOwner: isOwner,
-                            );
-                            final bool canDelete = AccessControlService.canPerform(
-                              _role,
-                              AccessControlService.actionDelete,
-                              isOwner: isOwner,
-                            );
+                          final bool canEdit = AccessControlService.canPerform(
+                            _role,
+                            AccessControlService.actionUpdate,
+                            isOwner: isOwner,
+                          );
+                          final bool canDelete =
+                              AccessControlService.canPerform(
+                                _role,
+                                AccessControlService.actionDelete,
+                                isOwner: isOwner,
+                              );
 
-                            // Cari index asli di logsNotifier untuk removeLog/updateLog
-                            final int realIndex = _controller.logs
-                                .indexWhere((l) => l.id == log.id);
+                          // Cari index asli di logsNotifier untuk removeLog/updateLog
+                          final int realIndex = _controller.logs.indexWhere(
+                            (l) => l.id == log.id,
+                          );
 
-                            return Dismissible(
-                              key: Key(log.id ?? log.date.toIso8601String()),
-                              direction: canDelete
-                                  ? DismissDirection.endToStart
-                                  : DismissDirection.none,
-                              background: Container(
-                                color: Colors.red,
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 20),
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                child: const Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.delete, color: Colors.white, size: 28),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      "Hapus",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                          return Dismissible(
+                            key: Key(log.id ?? log.date.toIso8601String()),
+                            direction: canDelete
+                                ? DismissDirection.endToStart
+                                : DismissDirection.none,
+                            background: Container(
+                              color: Colors.red,
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
                               ),
-                              onDismissed: canDelete
-                                  ? (direction) {
+                              child: const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.delete,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    "Hapus",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            onDismissed: canDelete
+                                ? (direction) {
+                                    final deletedTitle = log.title;
+                                    if (realIndex != -1) {
+                                      _controller.removeLog(
+                                        realIndex,
+                                        _role,
+                                        _uid,
+                                      );
+                                    }
+                                    ScaffoldMessenger.of(
+                                      context,
+                                    ).clearSnackBars();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.delete_outline,
+                                              color: Colors.white,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                'Catatan "$deletedTitle" telah dihapus',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        margin: const EdgeInsets.all(16),
+                                        duration: const Duration(seconds: 3),
+                                      ),
+                                    );
+                                  }
+                                : null,
+                            child: LogItemWidget(
+                              log: log,
+                              cardColor: _getCategoryColor(log.category),
+                              canEdit: canEdit,
+                              canDelete: canDelete,
+                              isOnline: _isOnline,
+                              onTap: () => canEdit && realIndex != -1
+                                  ? _goToEditor(log: log, index: realIndex)
+                                  : _goToViewer(log),
+                              onEditPressed: canEdit && realIndex != -1
+                                  ? () =>
+                                        _goToEditor(log: log, index: realIndex)
+                                  : () {},
+                              onDeletePressed: canDelete && realIndex != -1
+                                  ? () {
                                       final deletedTitle = log.title;
-                                      if (realIndex != -1) {
-                                        _controller.removeLog(realIndex, _role, _uid);
-                                      }
-                                      ScaffoldMessenger.of(context).clearSnackBars();
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      _controller.removeLog(
+                                        realIndex,
+                                        _role,
+                                        _uid,
+                                      );
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).clearSnackBars();
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(
                                           content: Row(
                                             children: [
-                                              const Icon(Icons.delete_outline, color: Colors.white),
+                                              const Icon(
+                                                Icons.delete_outline,
+                                                color: Colors.white,
+                                              ),
                                               const SizedBox(width: 12),
                                               Expanded(
                                                 child: Text(
                                                   'Catatan "$deletedTitle" telah dihapus',
-                                                  style: const TextStyle(color: Colors.white),
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                  ),
                                                 ),
                                               ),
                                             ],
                                           ),
                                           behavior: SnackBarBehavior.floating,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                           margin: const EdgeInsets.all(16),
                                           duration: const Duration(seconds: 3),
                                         ),
                                       );
                                     }
-                                  : null,
-                              child: LogItemWidget(
-                                log: log,
-                                canEdit: canEdit,
-                                canDelete: canDelete,
-                                isOnline: _isOnline,
-                                onTap: () => canEdit && realIndex != -1
-                                    ? _goToEditor(log: log, index: realIndex)
-                                    : _goToViewer(log),
-                                onEditPressed: canEdit && realIndex != -1
-                                    ? () => _goToEditor(log: log, index: realIndex)
-                                    : () {},
-                                onDeletePressed: canDelete && realIndex != -1
-                                    ? () {
-                                        final deletedTitle = log.title;
-                                        _controller.removeLog(realIndex, _role, _uid);
-                                        ScaffoldMessenger.of(context).clearSnackBars();
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Row(
-                                              children: [
-                                                const Icon(Icons.delete_outline, color: Colors.white),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Text(
-                                                    'Catatan "$deletedTitle" telah dihapus',
-                                                    style: const TextStyle(color: Colors.white),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            behavior: SnackBarBehavior.floating,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            margin: const EdgeInsets.all(16),
-                                            duration: const Duration(seconds: 3),
-                                          ),
-                                        );
-                                      }
-                                    : () {},
-                              ),
-                            );
-                          },
-                        );
+                                  : () {},
+                            ),
+                          );
+                        },
+                      );
                     },
                   ),
                 );
@@ -422,19 +496,25 @@ class _LogViewState extends State<LogView> {
           ),
         ],
       ),
-      floatingActionButton: AccessControlService.canPerform(
-        _role,
-        AccessControlService.actionCreate,
-      )
+      floatingActionButton:
+          AccessControlService.canPerform(
+            _role,
+            AccessControlService.actionCreate,
+          )
           ? FloatingActionButton.extended(
               onPressed: () => _goToEditor(),
               backgroundColor: _kAccentBlue,
               icon: const Icon(Icons.add, color: Colors.white),
               label: const Text(
                 "Catatan Baru",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
             )
           : null,
     );
@@ -445,7 +525,9 @@ class _LogViewState extends State<LogView> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Text("Konfirmasi Logout"),
           content: const Text("Apakah Anda yakin ingin keluar?"),
           actions: [

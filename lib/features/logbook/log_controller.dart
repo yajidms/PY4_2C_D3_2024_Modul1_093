@@ -116,52 +116,48 @@ class LogController {
 
   /// Mendengarkan perubahan status jaringan (Offline → Online)
   void _setupConnectivityListener() {
-    Connectivity().onConnectivityChanged.listen(
-      (List<ConnectivityResult> results) async {
-        final isOnline = results.contains(ConnectivityResult.mobile) ||
-            results.contains(ConnectivityResult.wifi);
+    Connectivity().onConnectivityChanged.listen((
+      List<ConnectivityResult> results,
+    ) async {
+      final isOnline =
+          results.contains(ConnectivityResult.mobile) ||
+          results.contains(ConnectivityResult.wifi);
 
-        // Event pertama dari connectivity_plus adalah state awal (bukan perubahan).
-        // Hanya catat kondisi awal tanpa memicu sync atau notifikasi.
-        if (_wasOffline == null) {
-          _wasOffline = !isOnline;
-          isOnlineNotifier.value = isOnline;
+      if (_wasOffline == null) {
+        _wasOffline = !isOnline;
+        isOnlineNotifier.value = isOnline;
+        await LogHelper.writeLog(
+          'NETWORK: State awal terdeteksi — ${isOnline ? "Online" : "Offline"}',
+          source: 'log_controller.dart',
+          level: 3,
+        );
+        return;
+      }
+
+      if (isOnline) {
+        isOnlineNotifier.value = true;
+        if (_wasOffline == true) {
           await LogHelper.writeLog(
-            'NETWORK: State awal terdeteksi — ${isOnline ? "Online" : "Offline"}',
+            'NETWORK: Koneksi pulih dari offline, mencoba sinkronisasi data pending...',
             source: 'log_controller.dart',
             level: 3,
           );
-          return;
+          final success = await loadLogs(_teamId);
+          syncStatusNotifier.value = success;
+          await Future.delayed(const Duration(seconds: 3));
+          syncStatusNotifier.value = null;
         }
-
-        if (isOnline) {
-          isOnlineNotifier.value = true;
-          if (_wasOffline == true) {
-            // Benar-benar baru pulih dari offline → tampilkan notifikasi
-            await LogHelper.writeLog(
-              'NETWORK: Koneksi pulih dari offline, mencoba sinkronisasi data pending...',
-              source: 'log_controller.dart',
-              level: 3,
-            );
-            final success = await loadLogs(_teamId);
-            // Beri tahu UI bahwa sync otomatis selesai
-            syncStatusNotifier.value = success;
-            // Reset ke null setelah sebentar agar bisa trigger lagi berikutnya
-            await Future.delayed(const Duration(seconds: 3));
-            syncStatusNotifier.value = null;
-          }
-          _wasOffline = false;
-        } else {
-          _wasOffline = true;
-          isOnlineNotifier.value = false;
-          await LogHelper.writeLog(
-            'NETWORK: Koneksi terputus.',
-            source: 'log_controller.dart',
-            level: 2,
-          );
-        }
-      },
-    );
+        _wasOffline = false;
+      } else {
+        _wasOffline = true;
+        isOnlineNotifier.value = false;
+        await LogHelper.writeLog(
+          'NETWORK: Koneksi terputus.',
+          source: 'log_controller.dart',
+          level: 2,
+        );
+      }
+    });
   }
 
   /// 2. ADD DATA (Instant Local + Background Cloud)
@@ -315,12 +311,8 @@ class LogController {
       filteredLogs.value = logsNotifier.value;
     } else {
       filteredLogs.value = logsNotifier.value
-          .where(
-            (log) => log.title.toLowerCase().contains(query.toLowerCase()),
-          )
+          .where((log) => log.title.toLowerCase().contains(query.toLowerCase()))
           .toList();
     }
   }
 }
-
-

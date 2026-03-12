@@ -33,8 +33,12 @@ class _LogEditorPageState extends State<LogEditorPage> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.log?.title ?? '');
-    _descController = TextEditingController(text: widget.log?.description ?? '');
-    _categoryController = TextEditingController(text: widget.log?.category ?? 'Software');
+    _descController = TextEditingController(
+      text: widget.log?.description ?? '',
+    );
+    _categoryController = TextEditingController(
+      text: widget.log?.category ?? 'Software',
+    );
     _isPublic = widget.log?.isPublic ?? false; // Nilai awal dari log yang ada
 
     // Listener agar Tab Pratinjau Markdown terupdate otomatis saat kita mengetik
@@ -53,7 +57,7 @@ class _LogEditorPageState extends State<LogEditorPage> {
         title,
         _descController.text,
         _categoryController.text,
-        widget.currentUser['uid']!,    // authorId
+        widget.currentUser['uid']!, // authorId
         widget.currentUser['teamId']!, // teamId
         _isPublic,
       );
@@ -116,12 +120,31 @@ class _LogEditorPageState extends State<LogEditorPage> {
                   children: [
                     TextField(
                       controller: _titleController,
-                      decoration: const InputDecoration(labelText: "Judul Catatan"),
+                      decoration: const InputDecoration(
+                        labelText: "Judul Catatan",
+                      ),
                     ),
                     const SizedBox(height: 10),
-                    TextField(
-                      controller: _categoryController,
-                      decoration: const InputDecoration(labelText: "Kategori"),
+                    DropdownButtonFormField<String>(
+                      initialValue: ['Mechanical', 'Electronic', 'Software']
+                              .contains(_categoryController.text)
+                          ? _categoryController.text
+                          : 'Software',
+                      items: ['Mechanical', 'Electronic', 'Software']
+                          .map((String category) => DropdownMenuItem(
+                                value: category,
+                                child: Text(category),
+                              ))
+                          .toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          if (newValue != null) {
+                            _categoryController.text = newValue;
+                          }
+                        });
+                      },
+                      decoration:
+                          const InputDecoration(labelText: "Kategori Proyek"),
                     ),
                     const SizedBox(height: 10),
                     // PRIVACY TOGGLE
@@ -176,22 +199,33 @@ class _LogEditorPageState extends State<LogEditorPage> {
                         Icon(
                           widget.log!.isPublic ? Icons.public : Icons.lock,
                           size: 14,
-                          color: widget.log!.isPublic ? Colors.green : Colors.grey,
+                          color: widget.log!.isPublic
+                              ? Colors.green
+                              : Colors.grey,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           widget.log!.isPublic ? "Publik" : "Privat",
                           style: TextStyle(
                             fontSize: 12,
-                            color: widget.log!.isPublic ? Colors.green : Colors.grey,
+                            color: widget.log!.isPublic
+                                ? Colors.green
+                                : Colors.grey,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Icon(Icons.folder_outlined, size: 14, color: Colors.blueGrey),
+                        const Icon(
+                          Icons.folder_outlined,
+                          size: 14,
+                          color: Colors.blueGrey,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           widget.log!.category,
-                          style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.blueGrey,
+                          ),
                         ),
                       ],
                     ),
@@ -212,4 +246,3 @@ class _LogEditorPageState extends State<LogEditorPage> {
     );
   }
 }
-

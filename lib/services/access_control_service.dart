@@ -10,7 +10,7 @@ class AccessControlService {
   static const String actionDelete = 'delete';
 
   static final Map<String, List<String>> _rolePermissions = {
-    'Ketua':   [actionCreate, actionRead, actionUpdate, actionDelete],
+    'Ketua': [actionCreate, actionRead, actionUpdate, actionDelete],
     'Anggota': [actionCreate, actionRead],
     'Asisten': [actionRead, actionUpdate],
   };

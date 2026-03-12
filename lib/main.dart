@@ -9,16 +9,13 @@ void main() async {
   // Wajib untuk operasi asinkron sebelum runApp
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load ENV
   await dotenv.load(fileName: ".env", isOptional: true);
 
   // Inisialisasi format tanggal untuk locale Indonesia
   await initializeDateFormatting('id_ID', null);
-
-  // --- INISIALISASI HIVE ---
   await Hive.initFlutter();
-  Hive.registerAdapter(LogbookAdapter()); // Mendaftarkan adapter yang baru saja digenerate
-  await Hive.openBox<Logbook>('offline_logs'); // Membuka kotak penyimpanan
+  Hive.registerAdapter(LogbookAdapter());
+  await Hive.openBox<Logbook>('offline_logs');
 
   runApp(const MyApp());
 }

@@ -55,14 +55,17 @@ class Logbook {
 
   factory Logbook.fromMap(Map<String, dynamic> map) {
     return Logbook(
-      id: (map['_id'] as ObjectId?)?.oid ?? (map['_id'] is String ? map['_id'] : null),
+      id:
+          (map['_id'] as ObjectId?)?.oid ??
+          (map['_id'] is String ? map['_id'] : null),
       title: map['title'] ?? '',
       description: map['description'] ?? '',
       date: map['date'] != null
           ? (map['date'] is String ? DateTime.parse(map['date']) : map['date'])
           : DateTime.now(),
       category: (map['category'] ?? 'Pribadi').toString(),
-      authorId: (map['authorId'] ?? map['username'] ?? 'unknown_user').toString(),
+      authorId: (map['authorId'] ?? map['username'] ?? 'unknown_user')
+          .toString(),
       teamId: (map['teamId'] ?? 'no_team').toString(),
       isPublic: map['isPublic'] ?? false,
     );

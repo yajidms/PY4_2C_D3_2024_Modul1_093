@@ -16,6 +16,7 @@ class LogItemWidget extends StatelessWidget {
   final bool canEdit;
   final bool canDelete;
   final bool isOnline;
+  final Color? cardColor;
 
   const LogItemWidget({
     super.key,
@@ -26,44 +27,45 @@ class LogItemWidget extends StatelessWidget {
     this.canEdit = true,
     this.canDelete = true,
     this.isOnline = true,
+    this.cardColor,
   });
 
   IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Pekerjaan':
-        return Icons.work_outline;
-      case 'Urgent':
-        return Icons.warning_amber_rounded;
-      case 'Kuliah':
-        return Icons.school_outlined;
+    switch (category.toLowerCase()) {
+      case 'mechanical':
+        return Icons.build_outlined;
+      case 'electronic':
+        return Icons.electrical_services_outlined;
+      case 'software':
+        return Icons.code_outlined;
       default:
-        return Icons.person_outline;
+        return Icons.label_outline;
     }
   }
 
   Color _getCategoryIconColor(String category) {
-    switch (category) {
-      case 'Pekerjaan':
-        return Colors.blue;
-      case 'Urgent':
-        return Colors.red;
-      case 'Kuliah':
-        return Colors.orange;
+    switch (category.toLowerCase()) {
+      case 'mechanical':
+        return Colors.green.shade700;
+      case 'electronic':
+        return Colors.blue.shade700;
+      case 'software':
+        return Colors.purple.shade700;
       default:
         return Colors.teal;
     }
   }
 
   Color _getCategoryColor(String category) {
-    switch (category) {
-      case 'Pekerjaan':
-        return Colors.blue.shade50;
-      case 'Urgent':
-        return Colors.red.shade50;
-      case 'Kuliah':
-        return Colors.orange.shade50;
+    switch (category.toLowerCase()) {
+      case 'mechanical':
+        return Colors.green.shade100;
+      case 'electronic':
+        return Colors.blue.shade100;
+      case 'software':
+        return Colors.purple.shade100;
       default:
-        return Colors.teal.shade50;
+        return Colors.grey.shade100;
     }
   }
 
@@ -74,7 +76,7 @@ class LogItemWidget extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: _kCardBg,
+          color: cardColor ?? _kCardBg,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -130,43 +132,43 @@ class LogItemWidget extends StatelessWidget {
                           spacing: 8,
                           runSpacing: 8,
                           children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isOnline
-                                  ? Colors.blue.shade50
-                                  : Colors.orange.shade50,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  isOnline
-                                      ? Icons.cloud_done_outlined
-                                      : Icons.cloud_off_outlined,
-                                  size: 13,
-                                  color: isOnline
-                                      ? Colors.blue
-                                      : Colors.orange.shade700,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  isOnline ? 'Cloud' : 'Offline',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isOnline
+                                    ? Colors.blue.shade50
+                                    : Colors.orange.shade50,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isOnline
+                                        ? Icons.cloud_done_outlined
+                                        : Icons.cloud_off_outlined,
+                                    size: 13,
                                     color: isOnline
                                         ? Colors.blue
                                         : Colors.orange.shade700,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    isOnline ? 'Cloud' : 'Offline',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: isOnline
+                                          ? Colors.blue
+                                          : Colors.orange.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
                             // PRIVACY INDICATOR CHIP
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -226,7 +228,9 @@ class LogItemWidget extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
-                                      color: _getCategoryIconColor(log.category),
+                                      color: _getCategoryIconColor(
+                                        log.category,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -253,7 +257,9 @@ class LogItemWidget extends StatelessWidget {
                 // button Edit & Delete
                 Container(
                   decoration: BoxDecoration(
-                    border: Border(left: BorderSide(color: Colors.grey.shade100)),
+                    border: Border(
+                      left: BorderSide(color: Colors.grey.shade100),
+                    ),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,

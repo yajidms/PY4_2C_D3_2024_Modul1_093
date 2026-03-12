@@ -172,7 +172,6 @@ class MongoService {
     }
   }
 
-
   /// READ: Mengambil data dari Cloud berdasarkan Team ID
   Future<List<Logbook>> getLogs(String teamId) async {
     await LogHelper.writeLog(
