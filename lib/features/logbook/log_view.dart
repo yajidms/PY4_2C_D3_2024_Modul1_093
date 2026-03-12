@@ -224,9 +224,9 @@ class _LogViewState extends State<LogView> {
 
                         final bool isOwner = log.authorId == currentUid;
                         final bool isPublic = log.isPublic == true;
-                        final bool isAsisten = currentRole == 'Asisten';
+                        final bool isPrivileged = currentRole == 'Asisten' || currentRole == 'Ketua';
 
-                        return isOwner || isPublic || isAsisten;
+                        return isOwner || isPublic || isPrivileged;
                       }).toList();
 
                       if (displayLogs.isEmpty) {

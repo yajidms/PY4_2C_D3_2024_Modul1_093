@@ -34,6 +34,9 @@ class LogController {
 
   final MongoService _mongo = MongoService();
 
+  /// null = belum diketahui (state awal), true = sebelumnya offline, false = sebelumnya online
+  bool? _wasOffline;
+
   List<Logbook> get logs => logsNotifier.value;
 
   /// Hanya muat cache lokal dari Hive (tanpa sync cloud) — dipanggil dari constructor
@@ -112,19 +115,44 @@ class LogController {
   void _setupConnectivityListener() {
     Connectivity().onConnectivityChanged.listen(
       (List<ConnectivityResult> results) async {
-        if (results.contains(ConnectivityResult.mobile) ||
-            results.contains(ConnectivityResult.wifi)) {
+        final isOnline = results.contains(ConnectivityResult.mobile) ||
+            results.contains(ConnectivityResult.wifi);
+
+        // Event pertama dari connectivity_plus adalah state awal (bukan perubahan).
+        // Hanya catat kondisi awal tanpa memicu sync atau notifikasi.
+        if (_wasOffline == null) {
+          _wasOffline = !isOnline;
           await LogHelper.writeLog(
-            'NETWORK: Koneksi pulih, mencoba sinkronisasi data pending...',
+            'NETWORK: State awal terdeteksi — ${isOnline ? "Online" : "Offline"}',
             source: 'log_controller.dart',
             level: 3,
           );
-          final success = await loadLogs(_teamId);
-          // Beri tahu UI bahwa sync otomatis selesai
-          syncStatusNotifier.value = success;
-          // Reset ke null setelah sebentar agar bisa trigger lagi berikutnya
-          await Future.delayed(const Duration(seconds: 3));
-          syncStatusNotifier.value = null;
+          return;
+        }
+
+        if (isOnline) {
+          if (_wasOffline == true) {
+            // Benar-benar baru pulih dari offline → tampilkan notifikasi
+            await LogHelper.writeLog(
+              'NETWORK: Koneksi pulih dari offline, mencoba sinkronisasi data pending...',
+              source: 'log_controller.dart',
+              level: 3,
+            );
+            final success = await loadLogs(_teamId);
+            // Beri tahu UI bahwa sync otomatis selesai
+            syncStatusNotifier.value = success;
+            // Reset ke null setelah sebentar agar bisa trigger lagi berikutnya
+            await Future.delayed(const Duration(seconds: 3));
+            syncStatusNotifier.value = null;
+          }
+          _wasOffline = false;
+        } else {
+          _wasOffline = true;
+          await LogHelper.writeLog(
+            'NETWORK: Koneksi terputus.',
+            source: 'log_controller.dart',
+            level: 2,
+          );
         }
       },
     );
