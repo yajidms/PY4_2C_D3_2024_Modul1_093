@@ -94,9 +94,7 @@ void main() {
       // (2) exercise (act, operate)
       controller.reset(); // aslinya menjadi 0
       actual = controller.value;
-      
-      // DISENGAJA FAIL DISINI UNTUK MENGHASILKAN (+9 -1)
-      expected = 1; 
+      expected = 0;
 
       // (3) verify (assert, check)
       expect(actual, expected, reason: 'Expected $expected but got $actual');

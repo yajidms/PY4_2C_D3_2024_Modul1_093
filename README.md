@@ -40,15 +40,15 @@ Prinsip Single Responsibility (SRP) sangat membantu saat mengimplementasikan fit
 ### Test Case Result (TC01 - TC10)
 
 | Test Case ID | Modul Uji | Test Type | Nama Test Case | Prekondisi | Langkah Pengujian | Data Test | Ekspektasi | Aktual | Hasil |
-|---|---|---|---|---|---|---|---|---|---|
-| TC01 | loadCounter(String) | Positif | initial value should be 0 | instance controller dibuat, storage kosong | panggil loadCounter, cek value | username="admin" | counter nol (0) | counter nol (0) | Pass |
-| TC02 | setStep(int) | Positif | setStep should change step value | instance berjalan | panggil setStep(5), cek step | step=5 | step menjadi 5 | step menjadi 5 | Pass |
-| TC03 | setStep(int) | Negatif | setStep should ignore negative value | step bernilai 3 | panggil setStep(-1), cek step | step=-1 | step tetap 3 | step tetap 3 | Pass |
-| TC04 | increment(String) | Positif | increment should increase counter based on step | step=2, counter=0 | panggil increment, cek value | username="admin", step=2 | counter menjadi 2 | counter menjadi 2 | Pass |
-| TC05 | decrement(String) | Positif | decrement should decrease counter based on step | step=2, counter=2 | panggil decrement, cek value | username="admin", step=2 | counter menjadi 0 | counter menjadi 0 | Pass |
-| TC06 | decrement(String) | Negatif | decrement should not go below zero | step=5, counter=0 | panggil decrement, cek value | username="admin", step=5 | counter tidak di bawah 0 (tetap 0) | counter tidak di bawah 0 (tetap 0) | Pass |
-| TC07 | reset(String) | Positif | reset should set counter to zero | counter > 0 | panggil reset, cek value | username="admin" | counter menjadi 0 | counter tidak 0 (bug implementasi) | Fail |
-| TC08 | history | Positif | history should record actions | step=1, history kosong | panggil increment, cek history | username="admin" | history merekam aksi | history merekam aksi | Pass |
-| TC09 | history | Negatif | history should not exceed 5 items | step=1 | increment 6 kali, cek qty history | 6 kali increment | qty history max 5 | qty history max 5 | Pass |
-| TC10 | loadCounter(String) | Positif | counter should persist using SharedPreferences | step=3, increment dilakukan (counter=3) | buat instance baru, loadCounter, cek value | username="admin" | counter dipulihkan jadi 3 | counter dipulihkan jadi 3 | Pass |
+|---|---|---|---|---|---|---|---|---|-------|
+| TC01 | loadCounter(String) | Positif | initial value should be 0 | instance controller dibuat, storage kosong | panggil loadCounter, cek value | username="admin" | counter nol (0) | counter nol (0) | Pass  |
+| TC02 | setStep(int) | Positif | setStep should change step value | instance berjalan | panggil setStep(5), cek step | step=5 | step menjadi 5 | step menjadi 5 | Pass  |
+| TC03 | setStep(int) | Negatif | setStep should ignore negative value | step bernilai 3 | panggil setStep(-1), cek step | step=-1 | step tetap 3 | step tetap 3 | Pass  |
+| TC04 | increment(String) | Positif | increment should increase counter based on step | step=2, counter=0 | panggil increment, cek value | username="admin", step=2 | counter menjadi 2 | counter menjadi 2 | Pass  |
+| TC05 | decrement(String) | Positif | decrement should decrease counter based on step | step=2, counter=2 | panggil decrement, cek value | username="admin", step=2 | counter menjadi 0 | counter menjadi 0 | Pass  |
+| TC06 | decrement(String) | Negatif | decrement should not go below zero | step=5, counter=0 | panggil decrement, cek value | username="admin", step=5 | counter tidak di bawah 0 (tetap 0) | counter tidak di bawah 0 (tetap 0) | Pass  |
+| TC07 | reset(String) | Positif | reset should set counter to zero | counter > 0 | panggil reset, cek value | username="admin" | counter menjadi 0 | counter menjadi 0 | Pass  |
+| TC08 | history | Positif | history should record actions | step=1, history kosong | panggil increment, cek history | username="admin" | history merekam aksi | history merekam aksi | Pass  |
+| TC09 | history | Negatif | history should not exceed 5 items | step=1 | increment 6 kali, cek qty history | 6 kali increment | qty history max 5 | qty history max 5 | Pass  |
+| TC10 | loadCounter(String) | Positif | counter should persist using SharedPreferences | step=3, increment dilakukan (counter=3) | buat instance baru, loadCounter, cek value | username="admin" | counter dipulihkan jadi 3 | counter dipulihkan jadi 3 | Pass  |
 
