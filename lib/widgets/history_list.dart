@@ -32,7 +32,7 @@ class HistoryList extends StatelessWidget {
 
               final entry = history[index];
               final accentColor = pickAccentColor(entry);
-              final tileColor = accentColor?.withOpacity(0.18);
+              final tileColor = accentColor?.withValues(alpha: 0.18);
 
               return Card(
                 elevation: 2,
