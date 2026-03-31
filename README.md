@@ -52,3 +52,27 @@ Prinsip Single Responsibility (SRP) sangat membantu saat mengimplementasikan fit
 | TC09 | history | Negatif | history should not exceed 5 items | step=1 | increment 6 kali, cek qty history | 6 kali increment | qty history max 5 | qty history max 5 | Pass  |
 | TC10 | loadCounter(String) | Positif | counter should persist using SharedPreferences | step=3, increment dilakukan (counter=3) | buat instance baru, loadCounter, cek value | username="admin" | counter dipulihkan jadi 3 | counter dipulihkan jadi 3 | Pass  |
 
+### Laporan Rekapitulasi Test (Task Praktikum 2)
+
+| Nama File | `counter_controller.dart` & `module1_counter_test.dart`|
+| :--- | :--- |
+| **Total Test Case** | 10 |
+| **Total Test Pass** | 8 |
+| **Total Test Fail** | 2 |
+
+#### Modul Uji
+| Modul Uji | Jumlah Test Case | # TC Pass | # TC Fail |
+| --- | :---: | :---: | :---: |
+| decrement(String) | 2 | 1 | 1 |
+| history | 2 | 2 | 0 |
+| increment(String) | 1 | 1 | 0 |
+| loadCounter(String) | 2 | 2 | 0 |
+| reset(String) | 1 | 0 | 1 |
+| setStep(int) | 2 | 2 | 0 |
+
+### Daftar Bug (Bug Report)
+
+| ID | Modul Uji | Test Case ID | Deskripsi Bug | Langkah Reproduksi | Ekspektasi | Realita | Screen Shoot Run Test |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BUG-001 | decrement(String) | TC05 | Pengurangan tidak mengurangi counter sesuai `step`, tapi melainkan di-hardcode menjadi angka 2. | 1. Set step = 2<br>2. Panggil increment() agar counter = 2<br>3. Panggil decrement() | Counter menjadi 0 | Counter menjadi 2 | *(Sisipkan gambar log Terminal warna merah saat fail)* |
+| BUG-002 | reset(String) | TC07 | Fungsi reset tidak mengatur ulang `counter` menjadi 0, tetapi menjadikannya 1. | 1. Panggil increment() agar counter > 0<br>2. Panggil reset() | Counter menjadi 0 | Counter menjadi 1 | *(Sisipkan gambar log Terminal warna merah saat fail)* |
