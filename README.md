@@ -20,33 +20,35 @@ samples, guidance on mobile development, and a full API reference.
 
 # Self-Reflection
 Prinsip Single Responsibility (SRP) sangat membantu saat mengimplementasikan fitur History Logger. Dengan memisahkan logika di `CounterController`, saya bisa menambahkan pengelolaan daftar riwayat tanpa menyentuh atau merusak kode UI. Pemisahan ini membuat perubahan lebih aman, terarah, dan menjaga tampilan tetap stabil.
+## Praktikum 1: Unit Testing
 
-# Data Test Case (Sheet: TestCase)
+### Test Case (TC01 - TC10)
 
-| Test Case ID | Modul Uji | Test Type | Nama Test Case | Prekondisi | Langkah Pengujian (AAA) | Data Test | Ekspektasi |
+| Test Case ID | Modul Uji | Test Type | Nama Test Case | Prekondisi | Langkah Pengujian | Data Test | Ekspektasi |
 |---|---|---|---|---|---|---|---|
-| TC01 | Inisialisasi | Positif | initial value should be 0 | Program siap | setup: inisialisasi CounterController. exercise: get nilai counter aktual. verify: bandingkan aktual & ekspektasi | - | nilai counter sekarang nol. |
-| TC02 | setStep(int val) | Positif | setStep should change step value | Program siap | setup: inisialisasi CounterController. exercise: panggil fungsi setStep sesuai data. verify: bandingkan aktual & ekspektasi | NewStep = 5 | nilai step sekarang 5. |
-| TC03 | setStep(int val) | Negatif | setStep should change step value even if negative | Program siap | setup: inisialisasi CounterController. exercise: setStep(-1). verify: bandingkan aktual & ekspektasi | Step awal = 3, NewStep = -1 | (Catatan: Sesuai kode, tidak ada validasi negatif di setStep, jadi step akan berubah ke -1). |
-| TC04 | increment() | Positif | increment should increase counter by step | Program siap | setup: inisialisasi controller dan setStep(2). exercise: panggil increment(). verify: periksa nilai counter aktual. | NewStep = 2 | nilai counter menjadi 2 (ditambah dari 0). |
-| TC05 | decrement() | Positif | decrement should decrease counter by step if counter >= step | Program siap | setup: inisialisasi controller, setStep(2), dan increment 2 kali hingga nilai=4. exercise: panggil decrement(). verify: periksa nilai counter. | NewStep = 2, Counter = 4 | nilai counter berkurang 2 menjadi 2. |
-| TC06 | decrement() | Negatif / Boundary | decrement should set counter to 0 if counter < step | Program siap | setup: inisialisasi controller, setStep(2), increment() sehingga nilai=2, lalu setStep(3). exercise: panggil decrement(). verify: periksa nilai counter. | NewStep = 3, Counter = 2 | decrement mentok ke 0. counter menjadi 0. |
-| TC07 | reset() | Positif | reset should set counter to 0 and clear history | Program siap | setup: inisialisasi controller, panggil increment() agar tidak 0 dan ada history. exercise: panggil reset(). verify: periksa nilai counter & history. | - | nilai counter menjadi 0 dan array list history kosong. |
-| TC08 | \_addHistory() | Positif | history should add new item on increment/decrement | Program siap | setup: inisialisasi controller. exercise: panggil increment(). verify: periksa panjang & isi history. | NewStep = 1 | panjang elements list di history=1, isinya log increment terbaru. |
-| TC09 | \_addHistory() | Boundary | history should keep maximum 5 items | Program siap | setup: inisialisasi controller. exercise: panggil increment() 6 kali berturut-turut. verify: periksa panjang dan isi array list. | Loop increment = 6x | panjang array tetap maksimal 5 item. yang paling lama dihapus. |
-| TC10 | \_addHistory() | Positif | history adds new items to the beginning of the list | Program siap | setup: inisialisasi controller, panggil increment() pertama. exercise: panggil increment() kedua. verify: pastikan log index 0 merupakan log terakhir. | Panggilan berurutan 2 kali | urutan riwayat (history) teratas menunjukkan aktivitas terakhir (LIFO). |
+| TC01 | loadCounter(String) | Positif | initial value should be 0 | instance controller dibuat, data di storage kosong | panggil loadCounter(username), lalu cek value | username="admin" | nilai counter nol (0) |
+| TC02 | setStep(int) | Positif | setStep should change step value | instance controller berjalan | panggil setStep(5), lalu cek step | step=5 | nilai step menjadi 5 |
+| TC03 | setStep(int) | Negatif | setStep should ignore negative value | step bernilai 3 | panggil setStep(-1), lalu cek step | step=-1 | nilai step tidak berubah (tetap 3) |
+| TC04 | increment(String) | Positif | increment should increase counter based on step | step bernilai 2, counter bernilai 0 | panggil increment(username), lalu cek value | username="admin", step=2 | nilai counter menjadi 2 |
+| TC05 | decrement(String) | Positif | decrement should decrease counter based on step | step bernilai 2, counter bernilai 2 | panggil decrement(username), lalu cek value | username="admin", step=2 | nilai counter menjadi 0 |
+| TC06 | decrement(String) | Negatif | decrement should not go below zero | step bernilai 5, counter bernilai 0 | panggil decrement(username), lalu cek value | username="admin", step=5 | nilai counter tidak di bawah nol (tetap 0) |
+| TC07 | reset(String) | Positif | reset should set counter to zero | counter bernilai > 0 | panggil reset(username), lalu cek value | username="admin" | nilai counter menjadi 0 |
+| TC08 | history | Positif | history should record actions | step bernilai 1, history kosong | panggil increment(username), lalu cek history | username="admin" | history merekam teks aksi |
+| TC09 | history | Negatif | history should not exceed 5 items | step bernilai 1 | panggil increment 6 kali, lalu cek jumlah item history | 6 kali increment | jumlah item di history berjumlah maksimum 5 |
+| TC10 | loadCounter(String) | Positif | counter should persist using SharedPreferences | step=3, counter sudah dimuat dan di-increment (bernilai 3) | buat instance baru, panggil loadCounter(username), cek value | username="admin" | nilai counter setelah diload adalah 3 |
 
-# Data Test Case Result (Sheet: TestCaseResult)
+### Test Case Result (TC01 - TC10)
 
-| Test Case ID | Modul Uji | Test Type | Nama Test Case | Prekondisi | Langkah Pengujian (AAA) | Data Test | Ekspektasi | Aktual | Hasil (Pass/Fail) |
+| Test Case ID | Modul Uji | Test Type | Nama Test Case | Prekondisi | Langkah Pengujian | Data Test | Ekspektasi | Aktual | Hasil |
 |---|---|---|---|---|---|---|---|---|---|
-| TC01 | Inisialisasi | Positif | initial value should be 0 | Program siap | setup: inisialisasi CounterController. exercise: get nilai counter aktual. verify: bandingkan aktual & ekspektasi | - | nilai counter sekarang nol. | | - |
-| TC02 | setStep(int val) | Positif | setStep should change step value | Program siap | setup: inisialisasi CounterController. exercise: panggil fungsi setStep. verify: bandingkan aktual | NewStep = 5 | nilai step sekarang 5. | | - |
-| TC03 | setStep(int val) | Negatif | setStep should change step value even if negative | Program siap | setup: inisialisasi CounterController. exercise: setStep(-1). verify: bandingkan aktual | Step awal = 3, NewStep = -1 | nilai step berubah menjadi -1. | | - |
-| TC04 | increment() | Positif | increment should increase counter by step | Program siap | setup: inisialisasi controller, setStep(2). exercise: increment(). verify: periksa counter. | NewStep = 2 | nilai counter menjadi 2. | | - |
-| TC05 | decrement() | Positif | decrement should decrease counter by step if counter >= step | Program siap | setup: inisialisasi controller, setStep(2), double increment. exercise: decrement(). verify: periksa counter. | NewStep = 2, Counter = 4 | nilai counter berkurang 2 menjadi 2. | | - |
-| TC06 | decrement() | Negatif / Boundary | decrement should set counter to 0 if counter < step | Program siap | setup: inisialisasi controller, nilai=2, lalu setStep(3). exercise: decrement(). verify: periksa counter. | NewStep = 3, Counter = 2 | decrement mentok ke 0. counter menjadi 0. | | - |
-| TC07 | reset() | Positif | reset should set counter to 0 and clear history | Program siap | setup: inisialisasi controller, panggil increment(). exercise: reset(). verify: periksa nilai counter & history. | - | nilai counter 0 dan history kosong. | | - |
-| TC08 | \_addHistory() | Positif | history should add new item on increment/decrement | Program siap | setup: inisialisasi controller. exercise: increment(). verify: periksa list history. | NewStep = 1 | panjang list=1, isinya log increment terbaru. | | - |
-| TC09 | \_addHistory() | Boundary | history should keep maximum 5 items | Program siap | setup: inisialisasi controller. exercise: panggil increment() 6 kali. verify: periksa panjang max list. | Loop increment = 6x | panjang array max 5 item. | | - |
-| TC10 | \_addHistory() | Positif | history adds new items to the beginning of the list | Program siap | setup: inisialisasi, panggil increment() pertama. exercise: increment() kedua. verify: index 0 di history. | Panggilan 2 kali | index teratas history adalah log terakhir (LIFO). | | - |
+| TC01 | loadCounter(String) | Positif | initial value should be 0 | instance controller dibuat, storage kosong | panggil loadCounter, cek value | username="admin" | counter nol (0) | counter nol (0) | Pass |
+| TC02 | setStep(int) | Positif | setStep should change step value | instance berjalan | panggil setStep(5), cek step | step=5 | step menjadi 5 | step menjadi 5 | Pass |
+| TC03 | setStep(int) | Negatif | setStep should ignore negative value | step bernilai 3 | panggil setStep(-1), cek step | step=-1 | step tetap 3 | step tetap 3 | Pass |
+| TC04 | increment(String) | Positif | increment should increase counter based on step | step=2, counter=0 | panggil increment, cek value | username="admin", step=2 | counter menjadi 2 | counter menjadi 2 | Pass |
+| TC05 | decrement(String) | Positif | decrement should decrease counter based on step | step=2, counter=2 | panggil decrement, cek value | username="admin", step=2 | counter menjadi 0 | counter menjadi 0 | Pass |
+| TC06 | decrement(String) | Negatif | decrement should not go below zero | step=5, counter=0 | panggil decrement, cek value | username="admin", step=5 | counter tidak di bawah 0 (tetap 0) | counter tidak di bawah 0 (tetap 0) | Pass |
+| TC07 | reset(String) | Positif | reset should set counter to zero | counter > 0 | panggil reset, cek value | username="admin" | counter menjadi 0 | counter tidak 0 (bug implementasi) | Fail |
+| TC08 | history | Positif | history should record actions | step=1, history kosong | panggil increment, cek history | username="admin" | history merekam aksi | history merekam aksi | Pass |
+| TC09 | history | Negatif | history should not exceed 5 items | step=1 | increment 6 kali, cek qty history | 6 kali increment | qty history max 5 | qty history max 5 | Pass |
+| TC10 | loadCounter(String) | Positif | counter should persist using SharedPreferences | step=3, increment dilakukan (counter=3) | buat instance baru, loadCounter, cek value | username="admin" | counter dipulihkan jadi 3 | counter dipulihkan jadi 3 | Pass |
+
