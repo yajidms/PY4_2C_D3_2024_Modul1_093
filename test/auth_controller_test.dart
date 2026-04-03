@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-// Sesuaikan path import di bawah ini dengan struktur folder proyek Anda
-import 'package:logbook_app_093/features/auth/login_controller.dart'; 
+import 'package:logbook_app_093/features/auth/login_controller.dart';
 
 void main() {
   var actual, expected;
@@ -31,13 +30,15 @@ void main() {
       expect(actual, expected, reason: 'Expected $expected but got $actual');
     });
 
-    test('login should return true for username with trailing/leading spaces (Bug Fixed on Client Side)', () {
-      String inputUsername = " admin ";
-      String inputPassword = "123";
-      actual = controller.login(inputUsername.trim(), inputPassword.trim());
-      expected = true; 
-
-      expect(actual, expected, reason: 'Expected $expected but got $actual');
-    });
+    test(
+      'login should return true for username with trailing/leading spaces (Bug Fixed on Client Side)',
+      () {
+        String inputUsername = " admin ";
+        String inputPassword = "123";
+        actual = controller.login(inputUsername.trim(), inputPassword.trim());
+        expected = true;
+        expect(actual, expected, reason: 'Expected $expected but got $actual');
+      },
+    );
   });
 }
