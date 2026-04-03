@@ -33,12 +33,12 @@
 
 ### Summary Test Result
 
-| Keterangan | Nilai |
-|---|---|
+| Keterangan | Nilai                      |
+|---|----------------------------|
 | **Nama File** | `log_controller_test.dart` |
-| **Total Test Case** | 5 |
-| **Total Test Pass** | 5 |
-| **Total Test Fail** | 0 |
+| **Total Test Case** | 5                          |
+| **Total Test Pass** | 3                          |
+| **Total Test Fail** | 2                          |
 
 | Modul Uji | Jumlah Test Case | # TC Pass | # TC Fail |
 |---|---|-----------|-----------|
