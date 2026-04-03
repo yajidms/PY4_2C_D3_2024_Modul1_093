@@ -30,15 +30,13 @@ void main() {
       expect(actual, expected, reason: 'Expected $expected but got $actual');
     });
 
-    test(
-      'login should return true for username with trailing/leading spaces (Bug Fixed on Client Side)',
-      () {
-        String inputUsername = " admin ";
-        String inputPassword = "123";
-        actual = controller.login(inputUsername.trim(), inputPassword.trim());
-        expected = true;
-        expect(actual, expected, reason: 'Expected $expected but got $actual');
-      },
-    );
+    test('login should return false for unregistered user', () {
+      // (2) exercise (act, operate)
+      actual = controller.login("unknown_user", "123");
+      expected = false;
+
+      // (3) verify (assert, check)
+      expect(actual, expected, reason: 'Expected $expected but got $actual');
+    });
   });
 }
