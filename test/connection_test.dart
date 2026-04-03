@@ -1,51 +1,58 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logbook_app_093/services/mongo_service.dart';
-import 'package:logbook_app_093/helpers/log_helper.dart';
 
 void main() {
-  const String sourceFile = "connection_test.dart";
+  var actual, expected;
 
-  setUpAll(() async {
-    // Memuat env sekali di awal untuk semua test
-    await dotenv.load(fileName: ".env");
+  group('Module 4 - MongoService (Database Connection)', () {
+    late MongoService mongoService;
+
+    setUpAll(() async {
+      // (1) setup (arrange, build)
+      // Memuat file .env sebelum seluruh test dijalankan
+      await dotenv.load(fileName: ".env");
+    });
+
+    setUp(() {
+      mongoService = MongoService();
+    });
+
+    tearDownAll(() async {
+      // Membersihkan dan menutup koneksi setelah test selesai
+      await mongoService.close();
+    });
+
+    test('dotenv should load MONGODB_URI successfully', () {
+      // (2) exercise (act, operate)
+      actual = dotenv.env['MONGODB_URI'] != null && dotenv.env['MONGODB_URI']!.isNotEmpty;
+      expected = true;
+
+      // (3) verify (assert, check)
+      expect(actual, expected, reason: 'Expected $expected but got $actual');
+    });
+
+    test('connect should successfully establish connection to MongoDB', () async {
+      // (2) exercise (act, operate)
+      await mongoService.connect();
+      actual = mongoService.db?.isConnected;
+      expected = true;
+
+      // (3) verify (assert, check)
+      expect(actual, expected, reason: 'Expected $expected but got $actual');
+    });
+
+    test('close should terminate connection and set db to null', () async {
+      // (1) setup (arrange, build)
+      await mongoService.connect();
+
+      // (2) exercise (act, operate)
+      await mongoService.close();
+      actual = mongoService.db;
+      expected = null;
+
+      // (3) verify (assert, check)
+      expect(actual, expected, reason: 'Expected $expected but got $actual');
+    });
   });
-
-  test(
-    'Memastikan koneksi ke MongoDB Atlas berhasil via MongoService',
-        () async {
-      final mongoService = MongoService();
-
-      // Memanfaatkan LogHelper baru yang sudah pakai dev.log dan print berwarna
-      await LogHelper.writeLog(
-        "--- START CONNECTION TEST ---",
-        source: sourceFile,
-      );
-
-      try {
-        // Mengetes koneksi
-        await mongoService.connect();
-
-        // Ekspektasi: URI tidak null dan koneksi berhasil
-        expect(dotenv.env['MONGODB_URI'], isNotNull);
-
-        await LogHelper.writeLog(
-          "SUCCESS: Koneksi Atlas Terverifikasi",
-          source: sourceFile,
-          level: 2, // INFO (Hijau)
-        );
-      } catch (e) {
-        await LogHelper.writeLog(
-          "ERROR: Kegagalan koneksi - $e",
-          source: sourceFile,
-          level: 1, // ERROR (Merah)
-        );
-        fail("Koneksi gagal: $e");
-      } finally {
-        // Selalu tutup koneksi agar tidak menggantung di dashboard Atlas
-        await mongoService.close();
-        await LogHelper.writeLog("--- END TEST ---", source: sourceFile);
-      }
-    },
-  );
 }
