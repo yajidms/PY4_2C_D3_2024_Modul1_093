@@ -1,74 +1,48 @@
 import 'package:flutter/material.dart';
+import 'models/detection_result.dart';
 
 class DamagePainter extends CustomPainter {
+  final DetectionResult? detection;
+
+  // Menerima input dari VisionController
+  DamagePainter(this.detection); 
+
   @override
   void paint(Canvas canvas, Size size) {
-    // 1. Konfigurasi "Kuas" Digital
+    if (detection == null) return; // Jangan gambar jika belum ada data
+
     final paint = Paint()
       ..color = Colors.redAccent
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke;
 
-    // 2. Menghitung Dimensi Kotak (Area Pemindaian Statis)
-    // Membuat kotak di tengah layar seluas 50% dari lebar layar (Logical Pixels)
-    double boxSize = size.width * 0.5;
-    double left = (size.width - boxSize) / 2;
-    double top = (size.height - boxSize) / 2;
+    // SCALING CALIBRATION: Konversi nilai normalisasi ke Logical Pixels
+    double left = detection!.box.left * size.width;
+    double top = detection!.box.top * size.height;
+    double boxWidth = detection!.box.width * size.width;
+    double boxHeight = detection!.box.height * size.height;
 
-    final rect = Rect.fromLTWH(left, top, boxSize, boxSize);
+    final rect = Rect.fromLTWH(left, top, boxWidth, boxHeight);
 
-    // 3. Menggambar Kotak ke Kanvas
+    // Menggambar Bounding Box
     canvas.drawRect(rect, paint);
 
-    // Menggambar Crosshair Anchor pada sudut kotak
+    // Menggambar Crosshair Anchor
     const double crosshairLength = 15.0;
+    // Kiri Atas
+    canvas.drawLine(Offset(left, top), Offset(left + crosshairLength, top), paint);
+    canvas.drawLine(Offset(left, top), Offset(left, top + crosshairLength), paint);
+    // Kanan Atas
+    canvas.drawLine(Offset(left + boxWidth, top), Offset(left + boxWidth - crosshairLength, top), paint);
+    canvas.drawLine(Offset(left + boxWidth, top), Offset(left + boxWidth, top + crosshairLength), paint);
+    // Kiri Bawah
+    canvas.drawLine(Offset(left, top + boxHeight), Offset(left + crosshairLength, top + boxHeight), paint);
+    canvas.drawLine(Offset(left, top + boxHeight), Offset(left, top + boxHeight - crosshairLength), paint);
+    // Kanan Bawah
+    canvas.drawLine(Offset(left + boxWidth, top + boxHeight), Offset(left + boxWidth - crosshairLength, top + boxHeight), paint);
+    canvas.drawLine(Offset(left + boxWidth, top + boxHeight), Offset(left + boxWidth, top + boxHeight - crosshairLength), paint);
 
-    // Sudut Kiri Atas
-    canvas.drawLine(
-      Offset(left, top),
-      Offset(left + crosshairLength, top),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(left, top),
-      Offset(left, top + crosshairLength),
-      paint,
-    );
-    // Sudut Kanan Atas
-    canvas.drawLine(
-      Offset(left + boxSize, top),
-      Offset(left + boxSize - crosshairLength, top),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(left + boxSize, top),
-      Offset(left + boxSize, top + crosshairLength),
-      paint,
-    );
-    // Sudut Kiri Bawah
-    canvas.drawLine(
-      Offset(left, top + boxSize),
-      Offset(left + crosshairLength, top + boxSize),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(left, top + boxSize),
-      Offset(left, top + boxSize - crosshairLength),
-      paint,
-    );
-    // Sudut Kanan Bawah
-    canvas.drawLine(
-      Offset(left + boxSize, top + boxSize),
-      Offset(left + boxSize - crosshairLength, top + boxSize),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(left + boxSize, top + boxSize),
-      Offset(left + boxSize, top + boxSize - crosshairLength),
-      paint,
-    );
-
-    // 4. Konstruksi Label Tipe Kerusakan (Sesuai instruksi Task 3)
+    // Konstruksi Teks Label Intelijen
     const textStyle = TextStyle(
       color: Colors.white,
       fontSize: 14,
@@ -76,8 +50,8 @@ class DamagePainter extends CustomPainter {
       backgroundColor: Colors.redAccent,
     );
 
-    const textSpan = TextSpan(
-      text: " Searching for Road Damage... ",
+    final textSpan = TextSpan(
+      text: " ${detection!.label} ",
       style: textStyle,
     );
 
@@ -86,21 +60,20 @@ class DamagePainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
 
-    // 5. Proses Layouting & Rendering Teks
     textPainter.layout();
 
-    // Penempatan presisi: Jika koordinat Y teks negatif (terpotong atas), pindahkan ke bawah kotak
+    // Penempatan Aman Label
     double textY = top - 25;
     if (textY < 0) {
-      textY = top + boxSize + 5;
+      textY = top + boxHeight + 5;
     }
 
     textPainter.paint(canvas, Offset(left, textY));
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    // Pada Task 3 ini bersifat statis, kembalikan false untuk menghemat CPU.
-    return false;
+  bool shouldRepaint(covariant DamagePainter oldDelegate) {
+    // Kembalikan true jika objek deteksi berubah posisinya agar animasi berjalan
+    return oldDelegate.detection != detection;
   }
 }

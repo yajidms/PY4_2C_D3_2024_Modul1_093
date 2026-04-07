@@ -1,11 +1,19 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import '../../main.dart'; // import list cameras global
+import 'models/detection_result.dart';
 
 class VisionController extends ChangeNotifier with WidgetsBindingObserver {
   CameraController? controller;
   bool isInitialized = false;
   String? errorMessage;
+  
+  // State untuk Mock Detector
+  DetectionResult? currentDetection;
+  Timer? _mockTimer;
+  final Random _random = Random();
 
   VisionController() {
     WidgetsBinding.instance.addObserver(this);
@@ -29,10 +37,37 @@ class VisionController extends ChangeNotifier with WidgetsBindingObserver {
       await controller!.initialize();
       isInitialized = true;
       errorMessage = null;
+
+      // Mulai simulasi deteksi AI setelah kamera siap
+      _startMockDetection();
     } catch (e) {
       errorMessage = "Failed to initialize camera: $e";
     }
     notifyListeners();
+  }
+
+  void _startMockDetection() {
+    _mockTimer?.cancel();
+    _mockTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (!isInitialized) return;
+
+      // Simulasi output model YOLO (Normalisasi 0.0 - 1.0)
+      double w = 0.2 + _random.nextDouble() * 0.3; // Lebar 20%-50%
+      double h = 0.2 + _random.nextDouble() * 0.3; // Tinggi 20%-50%
+      double x = _random.nextDouble() * (1.0 - w);
+      double y = _random.nextDouble() * (1.0 - h);
+      
+      int confidence = 70 + _random.nextInt(25); // Score 70% - 94%
+
+      currentDetection = DetectionResult(
+        box: Rect.fromLTWH(x, y, w, h),
+        label: "[D40] POTHOLE - $confidence%",
+        score: confidence / 100.0,
+      );
+      
+      // Memicu UI untuk menggambar ulang di lokasi baru
+      notifyListeners(); 
+    });
   }
 
   @override
@@ -44,6 +79,8 @@ class VisionController extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     if (state == AppLifecycleState.inactive) {
+      // RESOURCE GUARD: Matikan timer dan buang kamera dari memori
+      _mockTimer?.cancel();
       cameraController.dispose();
       isInitialized = false;
       notifyListeners();
@@ -54,6 +91,7 @@ class VisionController extends ChangeNotifier with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _mockTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     controller?.dispose();
     super.dispose();

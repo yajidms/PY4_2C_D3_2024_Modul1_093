@@ -38,7 +38,11 @@ class _VisionViewState extends State<VisionView> {
         ),
         // LAYER 2: Digital Overlay (Canvas Foreground)
         // Layer ini transparan dan berada tepat di atas kamera
-        Positioned.fill(child: CustomPaint(painter: DamagePainter())),
+        Positioned.fill(
+          child: CustomPaint(
+            painter: DamagePainter(_visionController.currentDetection),
+          ),
+        ),
       ],
     );
   }
