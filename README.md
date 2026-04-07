@@ -35,3 +35,6 @@ LOG_MUTE=connection_test.dart,mongo_service.dart
 | 12 | 🗑️ **Swipe-to-Delete** | Geser kiri untuk hapus, snackbar konfirmasi |
 | 13 | 🔄 **Pull-to-Refresh** | Tarik ke bawah untuk sync manual dari cloud |
 | 14 | 📋 **Audit Logging** | Level ERROR/INFO/VERBOSE, konfigurasi via `LOG_LEVEL` & `LOG_MUTE` |
+| 15 | 📷 **Camera Sensor & Lifecycle** | Akses live camera preview dengan proteksi pemakaian resource (App Lifecycle) |
+| 16 | 🎯 **Digital Overlay (CustomPainter)** | Tampilan bounding box, crosshair, dan dynamic text interface untuk deteksi AI |
+| 17 | 🤖 **AI Mock Detector** | Simulasi deteksi objek dengan pergerakan lokasi secara acak setiap 3 detik |
