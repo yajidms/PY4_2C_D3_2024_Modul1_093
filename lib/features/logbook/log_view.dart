@@ -7,6 +7,7 @@ import 'widgets/log_item_widget.dart';
 import '../../helpers/log_helper.dart';
 import '../../services/access_control_service.dart';
 import 'log_editor_page.dart';
+import '../vision/vision_view.dart';
 
 const Color _kBgColor = Color(0xFFF7F5DE);
 const Color _kAccentBlue = Color(0xFF3D8BE8);
@@ -253,6 +254,16 @@ class _LogViewState extends State<LogView> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.camera_alt, color: _kAccentBlue),
+            tooltip: "Smart-Patrol Vision",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const VisionView()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: _kAccentBlue),
             onPressed: () => _showLogoutConfirmDialog(context),
