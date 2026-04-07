@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'vision_controller.dart';
+import 'damage_painter.dart';
 
 class VisionView extends StatefulWidget {
   const VisionView({super.key});
@@ -28,12 +29,16 @@ class _VisionViewState extends State<VisionView> {
     return Stack(
       fit: StackFit.expand,
       children: [
+        // LAYER 1: Hardware Preview (Kamera Background)
         Center(
           child: AspectRatio(
             aspectRatio: _visionController.controller!.value.aspectRatio,
             child: CameraPreview(_visionController.controller!),
           ),
         ),
+        // LAYER 2: Digital Overlay (Canvas Foreground)
+        // Layer ini transparan dan berada tepat di atas kamera
+        Positioned.fill(child: CustomPaint(painter: DamagePainter())),
       ],
     );
   }
@@ -57,4 +62,3 @@ class _VisionViewState extends State<VisionView> {
     );
   }
 }
-

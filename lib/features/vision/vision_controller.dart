@@ -59,4 +59,3 @@ class VisionController extends ChangeNotifier with WidgetsBindingObserver {
     super.dispose();
   }
 }
-
