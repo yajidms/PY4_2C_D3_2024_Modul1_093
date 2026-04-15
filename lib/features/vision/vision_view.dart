@@ -32,7 +32,7 @@ class _VisionViewState extends State<VisionView> {
         // LAYER 1: Hardware Preview (Kamera Background)
         Center(
           child: AspectRatio(
-            aspectRatio: _visionController.controller!.value.aspectRatio,
+            aspectRatio: 1 / _visionController.controller!.value.aspectRatio,
             child: CameraPreview(_visionController.controller!),
           ),
         ),
