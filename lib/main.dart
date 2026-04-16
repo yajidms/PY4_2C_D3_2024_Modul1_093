@@ -1,7 +1,31 @@
 import 'package:flutter/material.dart';
-import 'counter_view.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:camera/camera.dart';
+import 'features/logbook/models/log_model.dart';
+import 'features/onboarding/onboarding_view.dart';
 
-void main() {
+List<CameraDescription> cameras = [];
+
+void main() async {
+  // Wajib untuk operasi asinkron sebelum runApp
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    cameras = await availableCameras();
+  } on CameraException catch (e) {
+    debugPrint('Error: ${e.code}\nError Message: ${e.description}');
+  }
+
+  await dotenv.load(fileName: ".env", isOptional: true);
+
+  // Inisialisasi format tanggal untuk locale Indonesia
+  await initializeDateFormatting('id_ID', null);
+  await Hive.initFlutter();
+  Hive.registerAdapter(LogbookAdapter());
+  await Hive.openBox<Logbook>('offline_logs');
+
   runApp(const MyApp());
 }
 
@@ -10,28 +34,15 @@ class MyApp extends StatelessWidget {
 
   // This widget is the root of your application.
   @override
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'LogBook App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
       ),
-      home: const CounterView(),
+      home: const OnboardingView(),
     );
   }
 }
@@ -103,7 +114,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
-          mainAxisAlignment: .center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('You have pushed the button this many times:'),
             Text(
