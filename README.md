@@ -1,7 +1,7 @@
 # logbook_app_093
-## Modul 6v2_Part 1
+## Modul 6v2
 
-<img src="./img.jpg" width="30%"> <img src="./img1.jpg" width="30%"> <img src="./img2.jpg" width="30%"> <img src="./img3.jpg" width="30%"> <img src="./img4.jpg" width="30%"> <img src="./img5.jpg" width="30%">
+<img src="./img.jpg" width="30%"> <img src="./img1.jpg" width="30%"> <img src="./img2.jpg" width="30%"> <img src="./img3.jpg" width="30%"> <img src="./img4.jpg" width="30%"> <img src="./img5.jpg" width="30%"> <img src="./img6.jpg" width="30%"> <img src="./img7.jpg" width="30%"> <img src="./img8.jpg" width="30%">
 
 ---
 
