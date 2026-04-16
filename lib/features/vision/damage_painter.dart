@@ -11,8 +11,12 @@ class DamagePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (detection == null) return; // Jangan gambar jika belum ada data
 
+    // Tentukan Warna Berdasarkan Label Kerusakan (Dynamic Branding)
+    bool isSevere = detection!.label.contains("D40");
+    Color targetColor = isSevere ? Colors.redAccent : Colors.orangeAccent;
+
     final paint = Paint()
-      ..color = Colors.redAccent
+      ..color = targetColor
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke;
 
@@ -42,12 +46,19 @@ class DamagePainter extends CustomPainter {
     canvas.drawLine(Offset(left + boxWidth, top + boxHeight), Offset(left + boxWidth - crosshairLength, top + boxHeight), paint);
     canvas.drawLine(Offset(left + boxWidth, top + boxHeight), Offset(left + boxWidth, top + boxHeight - crosshairLength), paint);
 
-    // Konstruksi Teks Label Intelijen
-    const textStyle = TextStyle(
+    // Konstruksi Teks Label Intelijen dengan Shadow
+    final textStyle = TextStyle(
       color: Colors.white,
       fontSize: 14,
       fontWeight: FontWeight.bold,
-      backgroundColor: Colors.redAccent,
+      backgroundColor: targetColor.withValues(alpha: 0.8),
+      shadows: const [
+        Shadow(
+          offset: Offset(1.0, 1.0),
+          blurRadius: 3.0,
+          color: Colors.black54,
+        ),
+      ],
     );
 
     final textSpan = TextSpan(

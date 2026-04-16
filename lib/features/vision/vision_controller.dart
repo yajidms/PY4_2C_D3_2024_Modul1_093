@@ -15,6 +15,9 @@ class VisionController extends ChangeNotifier with WidgetsBindingObserver {
   Timer? _mockTimer;
   final Random _random = Random();
 
+  bool isFlashOn = false;
+  bool isOverlayVisible = true;
+
   VisionController() {
     WidgetsBinding.instance.addObserver(this);
     initCamera();
@@ -51,7 +54,6 @@ class VisionController extends ChangeNotifier with WidgetsBindingObserver {
     _mockTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (!isInitialized) return;
 
-      // Simulasi output model YOLO (Normalisasi 0.0 - 1.0)
       double w = 0.2 + _random.nextDouble() * 0.3; // Lebar 20%-50%
       double h = 0.2 + _random.nextDouble() * 0.3; // Tinggi 20%-50%
       double x = _random.nextDouble() * (1.0 - w);
@@ -59,15 +61,37 @@ class VisionController extends ChangeNotifier with WidgetsBindingObserver {
       
       int confidence = 70 + _random.nextInt(25); // Score 70% - 94%
 
+      // Randomize tipe kerusakan untuk Homework Warna Dinamis
+      bool isPothole = _random.nextBool();
+      String label = isPothole ? "[D40] POTHOLE" : "[D00] LONGITUDINAL CRACK";
+
       currentDetection = DetectionResult(
         box: Rect.fromLTWH(x, y, w, h),
-        label: "[D40] POTHOLE - $confidence%",
+        label: "$label - $confidence%",
         score: confidence / 100.0,
       );
       
       // Memicu UI untuk menggambar ulang di lokasi baru
       notifyListeners(); 
     });
+  }
+
+  Future<void> toggleFlash() async {
+    if (controller == null || !controller!.value.isInitialized) return;
+    try {
+      isFlashOn = !isFlashOn;
+      await controller!.setFlashMode(
+        isFlashOn ? FlashMode.torch : FlashMode.off,
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Gagal mengubah status flash: $e");
+    }
+  }
+
+  void toggleOverlay() {
+    isOverlayVisible = !isOverlayVisible;
+    notifyListeners();
   }
 
   @override
