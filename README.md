@@ -24,9 +24,9 @@ LOG_MUTE=connection_test.dart,mongo_service.dart
 3. **Isi Lingkungan Variable:** Buat file `.env` di folder root persis seperti struktur yang ada di atas lalu isikan URL database MongoDB Anda sendiri.
 4. **Compile APK:** Untuk men-*compile* proyek menjadi *Android Package Kit* berekan `release` yang siap didistribusikan, jalankan perintah: 
    ```bash
-   flutter build apk --release
+   flutter build apk --split-per-abi
    ```
-   *File APK Anda kemudian akan ter-generate di folder: `build\app\outputs\flutter-apk\app-release.apk`*
+   *File APK Anda kemudian akan ter-generate di folder: `build\app\outputs\apk\app-arm64-v8a-release.apk`*
 
 ---
 
