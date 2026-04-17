@@ -110,7 +110,11 @@ class _VisionViewState extends State<VisionView> {
 
                 // Posisi Kanan: Filter / Magic Wand
                 IconButton(
-                  icon: const Icon(Icons.auto_fix_high, color: Colors.white, size: 32),
+                  icon: Icon(
+                    Icons.auto_fix_high,
+                    color: _visionController.isOverlayVisible ? Colors.blue : Colors.white,
+                    size: 32
+                  ),
                   onPressed: () {
                     _visionController.toggleOverlay();
                   },
