@@ -39,5 +39,5 @@ LOG_MUTE=connection_test.dart,mongo_service.dart
 | 16 | 🎯 **Digital Overlay (CustomPainter)** | Tampilan bounding box, crosshair, dan dynamic text interface untuk deteksi AI |
 | 17 | 🤖 **AI Mock Detector** | Simulasi deteksi objek dengan pergerakan lokasi secara acak setiap 3 detik |
 | 18 | 🎛️ **Advanced Image Processing (OpenCV)** | 10 filter pengolahan citra digital (Gaussian Blur, Threshold, Histogram, Fourier, dll.) menggunakan *Worker Isolate* |
-| 19 | 🎨 **Immersive Custom UI** | Tata letak layar kamera penuh bergaya *One UI 8* (*Shutter Custom*, Slider Intensitas Filter tipe komputasi tertahan/*Debouncer*) |
+| 19 | 🎨 **Immersive Custom UI** | Tata letak layar kamera (*Shutter Custom*, Slider Intensitas Filter tipe komputasi tertahan/*Debouncer*) |
 | 20 | 💾 **Save to Gallery** | Kemampuan penyimpanan dan integrasi file gambar difilter secara native ke memori galeri perangkat |
