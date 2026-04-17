@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../main.dart'; // import list cameras global
 import 'models/detection_result.dart';
 
@@ -92,6 +93,23 @@ class VisionController extends ChangeNotifier with WidgetsBindingObserver {
   void toggleOverlay() {
     isOverlayVisible = !isOverlayVisible;
     notifyListeners();
+  }
+
+  Future<XFile?> takePicture() async {
+    if (controller == null || !controller!.value.isInitialized) return null;
+    if (controller!.value.isTakingPicture) return null;
+
+    try {
+      await controller!.setFlashMode(isFlashOn ? FlashMode.torch : FlashMode.off);
+      // Kunci orientasi ke Portrait saat mengambil gambar
+      await controller!.lockCaptureOrientation(DeviceOrientation.portraitUp);
+      final XFile picture = await controller!.takePicture();
+      await controller!.unlockCaptureOrientation();
+      return picture;
+    } catch (e) {
+      debugPrint("Gagal mengambil foto: $e");
+      return null;
+    }
   }
 
   @override

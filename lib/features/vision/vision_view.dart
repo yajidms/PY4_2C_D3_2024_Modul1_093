@@ -3,6 +3,7 @@ import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'vision_controller.dart';
 import 'damage_painter.dart';
+import 'filter_view.dart';
 
 class VisionView extends StatefulWidget {
   const VisionView({super.key});
@@ -107,6 +108,23 @@ class _VisionViewState extends State<VisionView> {
           return Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              FloatingActionButton(
+                heroTag: "btn_capture",
+                backgroundColor: Colors.redAccent,
+                onPressed: () async {
+                  final file = await _visionController.takePicture();
+                  if (file != null && context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FilterView(imagePath: file.path),
+                      ),
+                    );
+                  }
+                },
+                child: const Icon(Icons.camera, color: Colors.white, size: 30),
+              ),
+              const SizedBox(height: 16),
               FloatingActionButton(
                 heroTag: "btn_flash",
                 backgroundColor: _visionController.isFlashOn ? Colors.yellow : Colors.white,
