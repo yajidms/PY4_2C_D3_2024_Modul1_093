@@ -17,6 +17,19 @@ LOG_MUTE=connection_test.dart,mongo_service.dart
 
 ---
 
+## Instalasi & Build APK
+
+1. **Persiapan:** Pastikan Anda punya Flutter SDK terinstall dan menyetel Device Emulator/Real Device Android aktif di PC.
+2. **Download Dependencies:** Jalankan perintah `flutter pub get` di terminal agar seluruh *package* terunduh.
+3. **Isi Lingkungan Variable:** Buat file `.env` di folder root persis seperti struktur yang ada di atas lalu isikan URL database MongoDB Anda sendiri.
+4. **Compile APK:** Untuk men-*compile* proyek menjadi *Android Package Kit* berekan `release` yang siap didistribusikan, jalankan perintah: 
+   ```bash
+   flutter build apk --release
+   ```
+   *File APK Anda kemudian akan ter-generate di folder: `build\app\outputs\flutter-apk\app-release.apk`*
+
+---
+
 ## Fitur
 
 | # | Fitur | Keterangan                                                                                                           |
