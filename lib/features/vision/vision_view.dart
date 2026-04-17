@@ -83,8 +83,6 @@ class _VisionViewState extends State<VisionView> {
                   icon: const Icon(Icons.photo_library_outlined, color: Colors.white, size: 32),
                   onPressed: () {},
                 ),
-
-                // Tengah: Shutter Button Khas Samsung One UI
                 GestureDetector(
                   onTap: () async {
                     final file = await _visionController.takePicture();
