@@ -45,6 +45,24 @@ class _VisionViewState extends State<VisionView> {
               painter: DamagePainter(_visionController.currentDetection),
             ),
           ),
+        Positioned(
+          top: 50,
+          left: 16,
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.black26,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_new,
+                color: Colors.white,
+                size: 24,
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+        ),
 
         // BOTTOM CONTROL AREA: Gradient & Shutter Row
         Positioned(
