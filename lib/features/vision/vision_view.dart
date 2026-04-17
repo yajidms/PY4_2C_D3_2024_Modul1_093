@@ -85,13 +85,17 @@ class _VisionViewState extends State<VisionView> {
                 // Posisi Kiri: Flash Toggle
                 IconButton(
                   icon: Icon(
-                    _visionController.isFlashOn ? Icons.flash_on : Icons.flash_off,
-                    color: _visionController.isFlashOn ? Colors.yellow : Colors.white,
+                    _visionController.isFlashOn
+                        ? Icons.flash_on
+                        : Icons.flash_off,
+                    color: _visionController.isFlashOn
+                        ? Colors.yellow
+                        : Colors.white,
                     size: 32,
                   ),
                   onPressed: _visionController.toggleFlash,
                 ),
-                
+
                 // Posisi Tengah: Shutter Button
                 GestureDetector(
                   onTap: () async {
@@ -100,7 +104,8 @@ class _VisionViewState extends State<VisionView> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => FilterView(imagePath: file.path),
+                          builder: (context) =>
+                              FilterView(imagePath: file.path),
                         ),
                       );
                     }
@@ -125,13 +130,16 @@ class _VisionViewState extends State<VisionView> {
                     ),
                   ),
                 ),
-
-                // Posisi Kanan: Filter / Magic Wand
+                // Posisi Kanan: Overlay Toggle
                 IconButton(
                   icon: Icon(
-                    Icons.auto_fix_high,
-                    color: _visionController.isOverlayVisible ? Colors.blue : Colors.white,
-                    size: 32
+                    _visionController.isOverlayVisible
+                        ? Icons.layers
+                        : Icons.layers_clear,
+                    color: _visionController.isOverlayVisible
+                        ? Colors.lightBlue
+                        : Colors.white,
+                    size: 32,
                   ),
                   onPressed: () {
                     _visionController.toggleOverlay();
@@ -160,13 +168,16 @@ class _VisionViewState extends State<VisionView> {
                 children: [
                   const Icon(Icons.videocam_off, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
-                  Text(_visionController.errorMessage!, textAlign: TextAlign.center),
+                  Text(
+                    _visionController.errorMessage!,
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () => openAppSettings(),
                     icon: const Icon(Icons.settings),
                     label: const Text("Buka Pengaturan Izin"),
-                  )
+                  ),
                 ],
               ),
             );
@@ -179,8 +190,12 @@ class _VisionViewState extends State<VisionView> {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text("Menghubungkan ke Sensor Visual...",
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)
+                  Text(
+                    "Menghubungkan ke Sensor Visual...",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
                   ),
                 ],
               ),
