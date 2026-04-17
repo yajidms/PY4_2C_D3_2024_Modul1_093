@@ -20,12 +20,13 @@ enum FilterType {
 class _FilterArgs {
   final String imagePath;
   final FilterType filterType;
-  _FilterArgs(this.imagePath, this.filterType);
+  final double intensity;
+  _FilterArgs(this.imagePath, this.filterType, this.intensity);
 }
 
 class FilterController {
-  Future<Uint8List> applyFilter(String imagePath, FilterType filterType) async {
-    return await compute(_processImage, _FilterArgs(imagePath, filterType));
+  Future<Uint8List> applyFilter(String imagePath, FilterType filterType, double intensity) async {
+    return await compute(_processImage, _FilterArgs(imagePath, filterType, intensity));
   }
 
   static Uint8List _processImage(_FilterArgs args) {
@@ -42,7 +43,8 @@ class FilterController {
           result = src.clone();
           break;
         case FilterType.contrastBrightness:
-          result = cv.convertScaleAbs(src, alpha: 1.5, beta: 20);
+          double alpha = 0.5 + (args.intensity * 2.5); // Range 0.5 to 3.0
+          result = cv.convertScaleAbs(src, alpha: alpha, beta: 10);
           break;
         case FilterType.histogramEqualization:
           cv.Mat gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY);
@@ -50,10 +52,12 @@ class FilterController {
           gray.dispose();
           break;
         case FilterType.gaussianBlur:
-          result = cv.gaussianBlur(src, (15, 15), 0);
+          int k = (args.intensity * 40).toInt();
+          if (k % 2 == 0) k += 1;
+          result = cv.gaussianBlur(src, (k, k), 0);
           break;
         case FilterType.unsharpMask:
-          cv.Mat blur = cv.gaussianBlur(src, (0, 0), 3.0);
+          cv.Mat blur = cv.gaussianBlur(src, (0, 0), 3.0 * args.intensity);
           result = cv.addWeighted(src, 1.5, blur, -0.5, 0);
           blur.dispose();
           break;
@@ -62,15 +66,19 @@ class FilterController {
           break;
         case FilterType.binaryThreshold:
           cv.Mat grayBin = cv.cvtColor(src, cv.COLOR_BGR2GRAY);
-          final thresh = cv.threshold(grayBin, 127, 255, cv.THRESH_BINARY);
+          double threshVal = args.intensity * 255;
+          final thresh = cv.threshold(grayBin, threshVal, 255, cv.THRESH_BINARY);
           result = thresh.$2;
           grayBin.dispose();
           break;
         case FilterType.medianFilter:
-          result = cv.medianBlur(src, 15);
+          int medianK = (args.intensity * 30).toInt();
+          if (medianK % 2 == 0) medianK += 1;
+          if (medianK < 3) medianK = 3;
+          result = cv.medianBlur(src, medianK);
           break;
         case FilterType.gammaCorrection:
-          double gamma = 0.5;
+          double gamma = 0.1 + (args.intensity * 3.0); // Range 0.1 to 3.1
           final lutList = List.generate(256, (i) {
             return (pow(i / 255.0, 1.0 / gamma) * 255.0).toInt().clamp(0, 255);
           });

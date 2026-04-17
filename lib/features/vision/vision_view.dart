@@ -45,6 +45,88 @@ class _VisionViewState extends State<VisionView> {
               painter: DamagePainter(_visionController.currentDetection),
             ),
           ),
+
+        // TOP BAR OVERLAY: Pengaturan Flash
+        Positioned(
+          top: 50,
+          left: 16,
+          child: IconButton(
+            icon: Icon(
+              _visionController.isFlashOn ? Icons.flash_on : Icons.flash_off,
+              color: Colors.white70,
+              size: 28,
+            ),
+            onPressed: _visionController.toggleFlash,
+          ),
+        ),
+
+        // BOTTOM CONTROL AREA: Gradient & Shutter Row
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            height: 160,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.black, Colors.transparent],
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Kiri: Ikon Galeri (Placeholder)
+                IconButton(
+                  icon: const Icon(Icons.photo_library_outlined, color: Colors.white, size: 32),
+                  onPressed: () {},
+                ),
+
+                // Tengah: Shutter Button Khas Samsung One UI
+                GestureDetector(
+                  onTap: () async {
+                    final file = await _visionController.takePicture();
+                    if (file != null && context.mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FilterView(imagePath: file.path),
+                        ),
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: 76,
+                    height: 76,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                      color: Colors.transparent,
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Kanan: Ikon Switch Camera (Placeholder)
+                IconButton(
+                  icon: const Icon(Icons.cameraswitch_outlined, color: Colors.white, size: 32),
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -52,13 +134,7 @@ class _VisionViewState extends State<VisionView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true, // Agar kamera penuh sampai atas
-      appBar: AppBar(
-        title: const Text("Smart-Patrol Vision", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.black45,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
+      backgroundColor: Colors.black, // Background hitam pekat
       body: ListenableBuilder(
         listenable: _visionController,
         builder: (context, child) {
@@ -99,54 +175,6 @@ class _VisionViewState extends State<VisionView> {
           // SUCCESS STATE: Camera Stack
           return _buildVisionStack();
         },
-      ),
-      // FLOATING ACTIONS: Hardware & Layer Controls
-      floatingActionButton: ListenableBuilder(
-        listenable: _visionController,
-        builder: (context, child) {
-          if (!_visionController.isInitialized) return const SizedBox.shrink();
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              FloatingActionButton(
-                heroTag: "btn_capture",
-                backgroundColor: Colors.redAccent,
-                onPressed: () async {
-                  final file = await _visionController.takePicture();
-                  if (file != null && context.mounted) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FilterView(imagePath: file.path),
-                      ),
-                    );
-                  }
-                },
-                child: const Icon(Icons.camera, color: Colors.white, size: 30),
-              ),
-              const SizedBox(height: 16),
-              FloatingActionButton(
-                heroTag: "btn_flash",
-                backgroundColor: _visionController.isFlashOn ? Colors.yellow : Colors.white,
-                onPressed: _visionController.toggleFlash,
-                child: Icon(
-                  _visionController.isFlashOn ? Icons.flash_on : Icons.flash_off,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 16),
-              FloatingActionButton(
-                heroTag: "btn_overlay",
-                backgroundColor: _visionController.isOverlayVisible ? Colors.blueAccent : Colors.grey,
-                onPressed: _visionController.toggleOverlay,
-                child: Icon(
-                  _visionController.isOverlayVisible ? Icons.layers : Icons.layers_clear,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          );
-        }
       ),
     );
   }
