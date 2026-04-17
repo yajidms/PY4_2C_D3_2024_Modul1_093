@@ -43,7 +43,7 @@ class FilterController {
           result = src.clone();
           break;
         case FilterType.contrastBrightness:
-          double alpha = 0.5 + (args.intensity * 2.5); // Range 0.5 to 3.0
+          double alpha = 0.5 + (args.intensity * 2.5);
           result = cv.convertScaleAbs(src, alpha: alpha, beta: 10);
           break;
         case FilterType.histogramEqualization:
@@ -78,7 +78,7 @@ class FilterController {
           result = cv.medianBlur(src, medianK);
           break;
         case FilterType.gammaCorrection:
-          double gamma = 0.1 + (args.intensity * 3.0); // Range 0.1 to 3.1
+          double gamma = 0.1 + (args.intensity * 3.0);
           final lutList = List.generate(256, (i) {
             return (pow(i / 255.0, 1.0 / gamma) * 255.0).toInt().clamp(0, 255);
           });

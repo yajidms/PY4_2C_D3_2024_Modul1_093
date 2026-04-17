@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:async'; // Added for Timer
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
@@ -58,7 +58,6 @@ class _FilterViewState extends State<FilterView> {
     });
     
     if (_debounceTimer != null) _debounceTimer!.cancel();
-    // Debouncer 300ms
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       if (!_isProcessing) {
         _applyFilter(_selectedFilter, intensity: _filterIntensity);
@@ -116,7 +115,7 @@ class _FilterViewState extends State<FilterView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Dark background
+      backgroundColor: Colors.black,
       body: SafeArea(
         child: Stack(
           fit: StackFit.expand,
@@ -169,7 +168,6 @@ class _FilterViewState extends State<FilterView> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Slider if supported
                       if (_supportsSlider(_selectedFilter))
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -190,8 +188,8 @@ class _FilterViewState extends State<FilterView> {
                           ),
                         )
                       else
-                        const SizedBox(height: 48), // Placeholder for slider height
-                      
+                        const SizedBox(height: 48),
+
                       // Carousel
                       SizedBox(
                         height: 90,
@@ -205,7 +203,7 @@ class _FilterViewState extends State<FilterView> {
                             return GestureDetector(
                               onTap: () {
                                 if (!_isProcessing && _selectedFilter != filter) {
-                                  _filterIntensity = 0.5; // Reset
+                                  _filterIntensity = 0.5;
                                   _applyFilter(filter, intensity: _filterIntensity);
                                 }
                               },
@@ -226,7 +224,7 @@ class _FilterViewState extends State<FilterView> {
                                             : null,
                                       ),
                                       child: Icon(
-                                        Icons.auto_awesome, // Placeholder icon
+                                        Icons.auto_awesome,
                                         color: isActive ? Colors.yellow : Colors.white,
                                         size: 20,
                                       ),

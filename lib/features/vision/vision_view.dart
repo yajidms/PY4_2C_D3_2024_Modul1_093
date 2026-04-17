@@ -31,34 +31,20 @@ class _VisionViewState extends State<VisionView> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // LAYER 1: Hardware Preview (Kamera Background)
+        // LAYER 1: Hardware Preview
         Center(
           child: AspectRatio(
             aspectRatio: 1 / _visionController.controller!.value.aspectRatio,
             child: CameraPreview(_visionController.controller!),
           ),
         ),
-        // LAYER 2: Digital Overlay (Hanya tampil jika diaktifkan)
+        // LAYER 2: Digital Overlay
         if (_visionController.isOverlayVisible)
           Positioned.fill(
             child: CustomPaint(
               painter: DamagePainter(_visionController.currentDetection),
             ),
           ),
-
-        // TOP BAR OVERLAY: Pengaturan Flash
-        Positioned(
-          top: 50,
-          left: 16,
-          child: IconButton(
-            icon: Icon(
-              _visionController.isFlashOn ? Icons.flash_on : Icons.flash_off,
-              color: Colors.white70,
-              size: 28,
-            ),
-            onPressed: _visionController.toggleFlash,
-          ),
-        ),
 
         // BOTTOM CONTROL AREA: Gradient & Shutter Row
         Positioned(
@@ -78,11 +64,17 @@ class _VisionViewState extends State<VisionView> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Kiri: Ikon Galeri (Placeholder)
+                // Posisi Kiri: Flash Toggle
                 IconButton(
-                  icon: const Icon(Icons.photo_library_outlined, color: Colors.white, size: 32),
-                  onPressed: () {},
+                  icon: Icon(
+                    _visionController.isFlashOn ? Icons.flash_on : Icons.flash_off,
+                    color: _visionController.isFlashOn ? Colors.yellow : Colors.white,
+                    size: 32,
+                  ),
+                  onPressed: _visionController.toggleFlash,
                 ),
+                
+                // Posisi Tengah: Shutter Button
                 GestureDetector(
                   onTap: () async {
                     final file = await _visionController.takePicture();
@@ -116,10 +108,12 @@ class _VisionViewState extends State<VisionView> {
                   ),
                 ),
 
-                // Kanan: Ikon Switch Camera (Placeholder)
+                // Posisi Kanan: Filter / Magic Wand
                 IconButton(
-                  icon: const Icon(Icons.cameraswitch_outlined, color: Colors.white, size: 32),
-                  onPressed: () {},
+                  icon: const Icon(Icons.auto_fix_high, color: Colors.white, size: 32),
+                  onPressed: () {
+                    _visionController.toggleOverlay();
+                  },
                 ),
               ],
             ),
@@ -132,7 +126,7 @@ class _VisionViewState extends State<VisionView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Background hitam pekat
+      backgroundColor: Colors.black,
       body: ListenableBuilder(
         listenable: _visionController,
         builder: (context, child) {
